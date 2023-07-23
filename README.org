@@ -1,0 +1,122 @@
+
+* Table of contents                               :toc_4:noexport:
+- [[#introduction][Introduction]]
+  - [[#mass-loss-from-citetmankoff_2021][Mass loss from citet:mankoff_2021]]
+    - [[#baseline-mass-loss][Baseline mass loss]]
+    - [[#2023-mass-loss][2023 mass loss]]
+      - [[#calendar-year-through-next-week][Calendar year (through next week):]]
+      - [[#hydrologic-year-through-next-week][Hydrologic year (through next week)]]
+
+* Introduction
+:PROPERTIES:
+:header-args: :session ARC :dir .
+:END:
+
+GISS contributions to the Arctic Report Card
+
+** Mass loss from citet:mankoff_2021
+
+#+BEGIN_SRC bash :exports both :results verbatim
+# July 23 2023 v 609
+# https://dataverse.geus.dk/file.xhtml?persistentId=doi:10.22008/FK2/OHI23Z/CU1ITY&version=609.0
+wget https://dataverse.geus.dk/api/access/datafile/49986 -O MB_region.nc
+#+END_SRC
+
+*** Baseline mass loss
+
++ ~ 165 Gt yr-1
+
+#+NAME: baseline_mass_loss
+#+BEGIN_SRC jupyter-python :exports both :results verbatim
+import xarray as xr
+ds = xr.open_dataset("MB_region.nc")
+
+print(ds\
+      .sum(dim='region')\
+      .sel({'time':slice('1991-01-01','2020-12-31')})\
+      .mean()*365)
+#+END_SRC
+
+#+RESULTS: baseline_mass_loss
+#+begin_example
+<xarray.Dataset>
+Dimensions:      ()
+Data variables: (12/19)
+    MB           float64 -165.0
+    MB_err       float64 88.19
+    MB_ROI       float64 -165.0
+    MB_ROI_err   float64 151.5
+    SMB          float64 323.5
+    SMB_err      float64 29.12
+    ...           ...
+    BMB_err      float64 5.497
+    BMB_ROI      float64 23.05
+    BMB_ROI_err  float64 5.412
+    MB_HIRHAM    float64 -169.2
+    MB_MAR       float64 -152.5
+    MB_RACMO     float64 -173.2
+#+end_example
+
+*** 2023 mass loss
+
+**** Calendar year (through next week):
+
+#+BEGIN_SRC bash :exports both :results verbatim
+echo "day of year: " $(( $(date +%j) + 7 ))
+#+END_SRC
+
+#+RESULTS:
+: day of year:  211
+
+#+BEGIN_SRC jupyter-python :exports both
+# print(ds.sum(dim='region').sel({'time':slice('2023-01-01','2023-12-31')}).mean()*211) 
+print(ds.sum(dim='region').sel({'time':slice('2023-01-01','2023-12-31')}).sum())
+#+END_SRC
+
+#+RESULTS:
+#+begin_example
+<xarray.Dataset>
+Dimensions:      ()
+Data variables: (12/19)
+    MB           float32 -183.4
+    MB_err       float32 54.38
+    MB_ROI       float32 -182.1
+    MB_ROI_err   float32 91.18
+    SMB          float32 113.4
+    SMB_err      float32 10.21
+    ...           ...
+    BMB_err      float32 3.456
+    BMB_ROI      float32 15.73
+    BMB_ROI_err  float32 3.399
+    MB_HIRHAM    float32 -94.94
+    MB_MAR       float32 -220.8
+    MB_RACMO     float32 0.0
+#+end_example
+
+**** Hydrologic year (through next week)
+
+#+BEGIN_SRC jupyter-python :exports both
+print(ds.sum(dim='region').sel({'time':slice('2022-09-01','2023-12-31')}).sum())
+#+END_SRC
+
+#+RESULTS:
+#+begin_example
+<xarray.Dataset>
+Dimensions:      ()
+Data variables: (12/19)
+    MB           float32 -87.58
+    MB_err       float32 85.75
+    MB_ROI       float32 -86.28
+    MB_ROI_err   float32 145.3
+    SMB          float32 382.6
+    SMB_err      float32 34.43
+    ...           ...
+    BMB_err      float32 5.256
+    BMB_ROI      float32 22.77
+    BMB_ROI_err  float32 5.172
+    MB_HIRHAM    float32 19.51
+    MB_MAR       float32 -143.6
+    MB_RACMO     float32 0.0
+#+end_example
+
+
