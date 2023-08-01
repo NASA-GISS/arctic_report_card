@@ -1,4 +1,6 @@
 
+#+PROPERTY: header-args:jupyter-python+ :session ARC2023
+
 * Table of contents                               :toc_4:noexport:
 - [[#introduction][Introduction]]
   - [[#mass-loss-from-citetmankoff_2021][Mass loss from citet:mankoff_2021]]
@@ -6,6 +8,9 @@
     - [[#2023-mass-loss][2023 mass loss]]
       - [[#calendar-year-through-next-week][Calendar year (through next week):]]
       - [[#hydrologic-year-through-next-week][Hydrologic year (through next week)]]
+  - [[#discharge][Discharge]]
+    - [[#baseline-discharge][Baseline discharge]]
+    - [[#2023-discharge-through-july-31][2023 discharge through July 31]]
 
 * Introduction
 :PROPERTIES:
@@ -118,5 +123,35 @@ Data variables: (12/19)
     MB_MAR       float32 -143.6
     MB_RACMO     float32 0.0
 #+end_example
+
+
+** Discharge
+*** Baseline discharge
+
+#+BEGIN_SRC jupyter-python :exports both
+import xarray as xr
+ds = xr.open_dataset("MB_region.nc")
+# ds[['D','D_err']].resample({'time':'YS'}).sum().to_dataframe()['2000':]
+
+df = ds[['D','D_err']].to_dataframe()['1990':]
+df['1991-01-01':'2020-12-31':].mean()*365
+df['1991-01-01':'2020-12-31':].resample('1D').interpolate().sum()/30
+#+END_SRC
+
+#+RESULTS:
+: D        465.779816
+: D_err     43.321384
+: dtype: float32
+
+*** 2023 discharge through July 31
+
+#+BEGIN_SRC jupyter-python :exports both
+df['2023-01-01':'2023-07-31'].resample('1D').interpolate().mean()*365
+#+END_SRC
+
+#+RESULTS:
+: D        486.221375
+: D_err     47.521473
+: dtype: float32
 
 
