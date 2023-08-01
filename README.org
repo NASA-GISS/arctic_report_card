@@ -9,8 +9,12 @@
       - [[#calendar-year-through-next-week][Calendar year (through next week):]]
       - [[#hydrologic-year-through-next-week][Hydrologic year (through next week)]]
   - [[#discharge][Discharge]]
-    - [[#baseline-discharge][Baseline discharge]]
+    - [[#baseline-discharge-1991-through-2020][Baseline discharge (1991 through 2020)]]
+    - [[#average-since-2013][Average since 2013]]
     - [[#2023-discharge-through-july-31][2023 discharge through July 31]]
+    - [[#trends][Trends]]
+      - [[#all-gis][All GIS]]
+      - [[#by-region][By region]]
 
 * Introduction
 :PROPERTIES:
@@ -126,32 +130,83 @@ Data variables: (12/19)
 
 
 ** Discharge
-*** Baseline discharge
+
++ Using v83 from https://dataverse.geus.dk/dataset.xhtml?persistentId=doi:10.22008/promice/data/ice_discharge/d/v02
+
+*** Baseline discharge (1991 through 2020)
 
 #+BEGIN_SRC jupyter-python :exports both
 import xarray as xr
-ds = xr.open_dataset("MB_region.nc")
-# ds[['D','D_err']].resample({'time':'YS'}).sum().to_dataframe()['2000':]
+ds = xr.open_dataset("~/data/Mankoff_2020/ice/v83/region.nc").sum(dim='region')
 
-df = ds[['D','D_err']].to_dataframe()['1990':]
-df['1991-01-01':'2020-12-31':].mean()*365
-df['1991-01-01':'2020-12-31':].resample('1D').interpolate().sum()/30
+df = ds[['discharge','err']].to_dataframe()['1990':]
+df['1991-01-01':'2020-12-31':].mean()
+df['1991-01-01':'2020-12-31':].resample('1D').interpolate().sum()/30/365
+df['1991-01-01':'2020-12-31':].resample('1D').interpolate().mean()
 #+END_SRC
 
 #+RESULTS:
-: D        465.779816
-: D_err     43.321384
-: dtype: float32
+: discharge    465.426797
+: err           43.289250
+: dtype: float64
+
+
+
+*** Average since 2013
+
+#+BEGIN_SRC jupyter-python :exports both
+df['2013-01-01':].resample('1D').interpolate().mean()
+#+END_SRC
+
+#+RESULTS:
+: discharge    497.514989
+: err           47.158456
+: dtype: float64
 
 *** 2023 discharge through July 31
 
 #+BEGIN_SRC jupyter-python :exports both
-df['2023-01-01':'2023-07-31'].resample('1D').interpolate().mean()*365
+df['2023-01-01':'2023-07-31'].resample('1D').interpolate().mean()
 #+END_SRC
 
 #+RESULTS:
-: D        486.221375
-: D_err     47.521473
-: dtype: float32
+: discharge    487.137623
+: err           45.921724
+: dtype: float64
 
 
+*** Trends
+
+See [[./figs_tmp]] sub-folder for graphics
+
+**** All GIS
+
+#+BEGIN_SRC jupyter-python :exports both
+df['discharge'].resample('1D').interpolate().resample('YS').mean().plot(drawstyle='steps-post')
+df['discharge'].resample('1D').interpolate().resample('YS').mean().tail()
+#+END_SRC
+
+#+RESULTS:
+:RESULTS:
+: time
+: 2019-01-01    498.118339
+: 2020-01-01    508.318805
+: 2021-01-01    513.141345
+: 2022-01-01    506.510392
+: 2023-01-01    487.234749
+: Freq: AS-JAN, Name: discharge, dtype: float64
+[[file:./figs_tmp/9ccb0fe30c87122c5f37c13618cb8086e8ab1ad9.png]]
+:END:
+
+**** By region
+
+#+BEGIN_SRC jupyter-python :exports both
+dsR = xr.open_dataset("~/data/Mankoff_2020/ice/v83/region.nc")
+
+# dsR = dsR['discharge'].resample({'time':'1D'}).interpolate().resample({'time':'MS'}).mean()
+dsR = dsR['discharge'].resample({'time':'1D'}).interpolate().resample({'time':'YS'}).mean()
+_ = dsR.plot.line(x='time', drawstyle='steps-post')
+#+END_SRC
+
+#+RESULTS:
+[[file:./figs_tmp/6742799f03de95bf9f5ff1e2cb55c7c1e55ede79.png]]
