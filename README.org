@@ -33,7 +33,7 @@ wget https://dataverse.geus.dk/api/access/datafile/49986 -O MB_region.nc
 
 *** Baseline mass loss
 
-+ ~ 165 Gt yr-1
++ ~ 218 Gt yr-1
 
 #+NAME: baseline_mass_loss
 #+BEGIN_SRC jupyter-python :exports both :results verbatim
@@ -42,7 +42,7 @@ ds = xr.open_dataset("MB_region.nc")
 
 print(ds\
       .sum(dim='region')\
-      .sel({'time':slice('1991-01-01','2020-12-31')})\
+      .sel({'time':slice('2002-01-01','2022-12-31')})\
       .mean()*365)
 #+END_SRC
 
@@ -51,19 +51,19 @@ print(ds\
 <xarray.Dataset>
 Dimensions:      ()
 Data variables: (12/19)
-    MB           float64 -165.0
-    MB_err       float64 88.19
-    MB_ROI       float64 -165.0
-    MB_ROI_err   float64 151.5
-    SMB          float64 323.5
-    SMB_err      float64 29.12
+    MB           float64 -217.8
+    MB_err       float64 91.88
+    MB_ROI       float64 -217.7
+    MB_ROI_err   float64 157.1
+    SMB          float64 291.5
+    SMB_err      float64 26.23
     ...           ...
-    BMB_err      float64 5.497
-    BMB_ROI      float64 23.05
-    BMB_ROI_err  float64 5.412
-    MB_HIRHAM    float64 -169.2
-    MB_MAR       float64 -152.5
-    MB_RACMO     float64 -173.2
+    BMB_err      float64 5.586
+    BMB_ROI      float64 23.95
+    BMB_ROI_err  float64 5.497
+    MB_HIRHAM    float64 -221.9
+    MB_MAR       float64 -209.6
+    MB_RACMO     float64 -218.5
 #+end_example
 
 *** 2023 mass loss
