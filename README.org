@@ -15,6 +15,7 @@
   - [[#trends][Trends]]
     - [[#all-gis][All GIS]]
     - [[#by-region][By region]]
+    - [[#publication-graphic][Publication graphic]]
 - [[#bare-ice-area][Bare ice area]]
 
 * Introduction
@@ -211,6 +212,178 @@ _ = dsR.plot.line(x='time', drawstyle='steps-post')
 
 #+RESULTS:
 [[file:./figs_tmp/6742799f03de95bf9f5ff1e2cb55c7c1e55ede79.png]]
+
+
+*** Publication graphic
+
+#+BEGIN_SRC jupyter-python :results raw drawer :display text/plain :eval no-export
+import matplotlib.gridspec as gridspec
+import numpy as np
+import pandas as pd
+from adjust_spines import adjust_spines as adj
+import matplotlib.pyplot as plt
+import datetime as dt
+
+from cycler import cycler
+plt.rcParams['axes.prop_cycle'] = cycler('color', ['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728', \
+                                                   '#9467bd', '#8c564b', '#e377c2', '#bcbd22', '#17becf'])
+
+fig = plt.figure(1, figsize=(9,7)) # w,h
+fig.clf()
+grid = plt.GridSpec(2, 1, height_ratios=[1,6], hspace=0.1) # h, w
+
+ax_D = fig.add_subplot(grid[1,:])
+
+from adjust_spines import adjust_spines as adj
+adj(ax_D, ['left','bottom'])
+
+ROOT="./out/"
+ROOT="/home/kdm/data/Mankoff_2020/ice/v83/"
+D = pd.read_csv(ROOT+"region_D.csv", index_col=0, parse_dates=True)
+err = pd.read_csv(ROOT+"region_err.csv", index_col=0, parse_dates=True)
+coverage = pd.read_csv(ROOT+"region_coverage.csv", index_col=0, parse_dates=True)
+
+THRESH = coverage < 0.5
+D[THRESH] = np.nan
+err[THRESH] = np.nan
+coverage[THRESH] = np.nan
+
+def pad_df(df):
+    df = df.append(pd.DataFrame(index=np.array(['1986-01-01']).astype('datetime64[ns]')), sort=True)
+    idx = str(df.index.year.max())+'-12-31'
+    df = df.append(pd.DataFrame(index=np.array([idx]).astype('datetime64[ns]')), sort=True)
+    df = df.sort_index()
+    return df
+
+D = pad_df(D)
+err = pad_df(err)
+coverage = pad_df(coverage)
+
+### Take annual average from daily interpolated rather than the existing samples.
+D_day_year = D.resample('1D',axis='rows').mean().interpolate(method='time',limit_area='inside').resample('A',axis='rows').mean()
+err_day_year=err.resample('1D',axis='rows').mean().interpolate(method='time',limit_area='inside').resample('A',axis='rows').mean()
+
+# No annual average if few sample
+num_obs = D.resample('Y').count().values
+D_day_year[num_obs<=3] = np.nan
+err_day_year[num_obs<=3] = np.nan
+
+MS=4
+Z=99
+for r in D.columns:
+    e = ax_D.errorbar(D[r].index, D[r].values, fmt='o', mfc='none', ms=MS)
+    C = e.lines[0].get_color()
+    D_day_year[r].plot(drawstyle='steps', linewidth=2, ax=ax_D,
+                       color=C,
+                       alpha=0.75, zorder=Z)
+    for i in np.arange(D.index.size):
+        if np.isnan(D.iloc[i][r]): continue
+        alpha = coverage.iloc[i][r]
+        if alpha < 0: alpha = 0
+        if alpha > 1: alpha = 1
+        ax_D.errorbar(D.iloc[i].name, D.iloc[i][r],
+                      yerr=err.iloc[i][r], ecolor='gray',
+                      marker='o', ms=MS,
+                      # mfc='k', mec='k',
+                      color=C,
+                      mfc=C, mec=C,
+                      alpha=alpha)
+
+    tx = pd.Timestamp(str(D[r].dropna().index[-1].year) + '-01-01') + dt.timedelta(days=380)
+    ty = D_day_year[r].dropna().iloc[-1]
+    # if r in ['CE', 'SW']: ty=ty-4
+    if r == 'CE': ty=ty-4
+    # if r == 'NE': ty=ty+4
+    # if r == 'NO': ty=ty-2
+    ax_D.text(tx, ty, r, verticalalignment='center', horizontalalignment='left')
+
+import matplotlib.dates as mdates
+ax_D.xaxis.set_major_locator(mdates.YearLocator())
+
+# plt.legend()
+ax_D.legend("", framealpha=0)
+ax_D.set_xlabel('Time [Years]')
+ax_D.set_ylabel('Discharge [Gt yr$^{-1}$]')
+ax_D.set_xlim(D.index[0], D.index[-1])
+ax_D.set_xticklabels(D.index.year.unique())
+
+ax_D.xaxis.set_tick_params(rotation=-90)
+for tick in ax_D.xaxis.get_majorticklabels():
+    tick.set_horizontalalignment("left")
+
+plt.savefig('./discharge_ts_regions.png', transparent=False, bbox_inches='tight', dpi=300)
+
+Err_pct = (err_day_year.values/D_day_year.values*100).round().astype(int).astype(str)
+Err_pct[Err_pct.astype(float)<0] = 'NaN'
+tbl = (D_day_year.round().fillna(value=0).astype(int).astype(str) + ' ('+Err_pct+')')
+tbl.index = tbl.index.year.astype(str)
+tbl.columns = [_ + ' (Err %)' for _ in tbl.columns]
+tbl
+#+END_SRC
+
+#+RESULTS:
+:RESULTS:
+#+begin_example
+/tmp/ipykernel_1267351/1121091204.py:33: FutureWarning: The frame.append method is deprecated and will be removed from pandas in a future version. Use pandas.concat instead.
+  df = df.append(pd.DataFrame(index=np.array(['1986-01-01']).astype('datetime64[ns]')), sort=True)
+/tmp/ipykernel_1267351/1121091204.py:35: FutureWarning: The frame.append method is deprecated and will be removed from pandas in a future version. Use pandas.concat instead.
+  df = df.append(pd.DataFrame(index=np.array([idx]).astype('datetime64[ns]')), sort=True)
+/tmp/ipykernel_1267351/1121091204.py:33: FutureWarning: The frame.append method is deprecated and will be removed from pandas in a future version. Use pandas.concat instead.
+  df = df.append(pd.DataFrame(index=np.array(['1986-01-01']).astype('datetime64[ns]')), sort=True)
+/tmp/ipykernel_1267351/1121091204.py:35: FutureWarning: The frame.append method is deprecated and will be removed from pandas in a future version. Use pandas.concat instead.
+  df = df.append(pd.DataFrame(index=np.array([idx]).astype('datetime64[ns]')), sort=True)
+/tmp/ipykernel_1267351/1121091204.py:33: FutureWarning: The frame.append method is deprecated and will be removed from pandas in a future version. Use pandas.concat instead.
+  df = df.append(pd.DataFrame(index=np.array(['1986-01-01']).astype('datetime64[ns]')), sort=True)
+/tmp/ipykernel_1267351/1121091204.py:35: FutureWarning: The frame.append method is deprecated and will be removed from pandas in a future version. Use pandas.concat instead.
+  df = df.append(pd.DataFrame(index=np.array([idx]).astype('datetime64[ns]')), sort=True)
+/tmp/ipykernel_1267351/1121091204.py:89: UserWarning: FixedFormatter should only be used together with FixedLocator
+  ax_D.set_xticklabels(D.index.year.unique())
+/tmp/ipykernel_1267351/1121091204.py:97: RuntimeWarning: invalid value encountered in cast
+  Err_pct = (err_day_year.values/D_day_year.values*100).round().astype(int).astype(str)
+#+end_example
+#+begin_example
+     CE (Err %) CW (Err %) NE (Err %) NO (Err %) NW (Err %) SE (Err %) SW (Err %)
+1986     70 (9)     74 (8)     23 (8)    0 (NaN)    0 (NaN)    0 (NaN)    0 (NaN)
+1987     70 (9)     72 (8)     23 (8)     25 (8)     95 (9)    0 (NaN)    0 (NaN)
+1988     70 (9)     70 (8)     22 (8)     24 (8)    0 (NaN)    0 (NaN)    0 (NaN)
+1989     73 (9)     72 (8)     22 (8)     24 (8)    0 (NaN)    0 (NaN)    0 (NaN)
+1990    75 (10)     69 (8)     22 (8)     23 (8)    0 (NaN)    0 (NaN)    0 (NaN)
+1991    0 (NaN)    0 (NaN)    0 (NaN)    0 (NaN)    0 (NaN)    0 (NaN)    0 (NaN)
+1992    0 (NaN)    0 (NaN)    0 (NaN)    0 (NaN)    0 (NaN)    0 (NaN)    0 (NaN)
+1993    0 (NaN)    0 (NaN)    0 (NaN)    0 (NaN)    0 (NaN)    0 (NaN)    19 (10)
+1994    71 (10)     69 (8)     24 (9)     25 (8)     96 (9)    0 (NaN)    0 (NaN)
+1995    0 (NaN)    0 (NaN)    0 (NaN)    0 (NaN)    0 (NaN)    0 (NaN)    0 (NaN)
+1996    0 (NaN)    0 (NaN)    0 (NaN)    0 (NaN)    0 (NaN)    0 (NaN)    0 (NaN)
+1997    0 (NaN)    0 (NaN)    0 (NaN)    0 (NaN)    0 (NaN)    0 (NaN)    0 (NaN)
+1998     69 (9)     74 (8)     22 (8)     23 (8)     92 (9)   130 (10)    0 (NaN)
+1999     69 (9)    0 (NaN)    0 (NaN)    0 (NaN)    0 (NaN)    0 (NaN)    0 (NaN)
+2000     69 (9)     79 (8)     23 (8)    0 (NaN)     92 (9)   131 (10)    19 (10)
+2001     69 (9)     80 (8)    0 (NaN)    0 (NaN)     90 (9)   126 (10)    19 (10)
+2002     72 (9)     82 (8)    0 (NaN)    0 (NaN)     92 (9)   133 (10)    19 (10)
+2003     75 (9)     83 (8)    0 (NaN)    0 (NaN)     94 (9)   139 (10)    0 (NaN)
+2004     78 (9)     83 (8)    0 (NaN)    0 (NaN)     98 (9)   145 (10)    0 (NaN)
+2005     85 (9)     84 (8)    0 (NaN)    0 (NaN)     99 (9)   147 (10)    20 (10)
+2006     84 (9)     86 (8)     25 (8)    0 (NaN)     97 (9)   139 (11)    20 (10)
+2007     81 (9)     85 (8)    0 (NaN)     26 (8)     96 (9)   136 (11)    19 (10)
+2008     79 (9)     87 (8)    0 (NaN)    0 (NaN)     98 (9)   140 (11)    18 (10)
+2009     78 (9)     89 (8)     25 (8)    0 (NaN)    101 (9)   143 (11)    18 (10)
+2010     77 (9)     89 (8)    0 (NaN)    0 (NaN)    103 (9)   143 (11)    17 (10)
+2011     79 (9)     89 (8)    0 (NaN)    0 (NaN)    106 (9)   142 (11)    19 (10)
+2012     79 (9)     93 (8)     26 (8)     25 (8)    105 (9)   139 (11)    19 (10)
+2013     78 (9)     95 (8)     26 (8)     25 (8)    109 (9)   140 (11)    20 (10)
+2014     76 (9)     94 (8)     28 (8)     26 (8)    111 (9)   138 (11)    19 (10)
+2015     76 (9)     94 (8)     28 (8)     26 (8)    111 (9)   141 (11)    19 (10)
+2016     73 (9)     90 (8)     29 (8)     27 (8)    113 (9)   134 (11)    18 (10)
+2017     78 (9)     82 (8)     29 (8)     28 (8)    115 (9)   144 (11)    19 (10)
+2018     80 (9)     79 (8)     30 (9)     29 (8)    115 (9)   142 (11)    18 (10)
+2019     81 (9)     80 (8)     30 (9)     29 (9)    111 (9)   148 (11)    18 (10)
+2020     86 (9)     85 (8)     30 (9)     28 (8)    110 (9)   150 (11)    19 (10)
+2021     83 (9)     90 (8)     31 (9)     27 (8)    113 (9)   149 (11)    19 (10)
+2022     85 (9)     84 (8)     31 (9)     27 (8)    115 (9)   146 (11)    19 (10)
+2023     81 (9)     82 (8)     31 (9)     27 (8)    115 (9)   133 (11)    19 (10)
+#+end_example
+: <Figure size 900x700 with 1 Axes>
+:END:
 
 * Bare ice area
 
