@@ -3,18 +3,19 @@
 
 * Table of contents                               :toc_4:noexport:
 - [[#introduction][Introduction]]
-  - [[#mass-loss-from-citetmankoff_2021][Mass loss from citet:mankoff_2021]]
-    - [[#baseline-mass-loss][Baseline mass loss]]
-    - [[#2023-mass-loss][2023 mass loss]]
-      - [[#calendar-year-through-next-week][Calendar year (through next week):]]
-      - [[#hydrologic-year-through-next-week][Hydrologic year (through next week)]]
-  - [[#discharge][Discharge]]
-    - [[#baseline-discharge-1991-through-2020][Baseline discharge (1991 through 2020)]]
-    - [[#average-since-2013][Average since 2013]]
-    - [[#2023-discharge-through-july-31][2023 discharge through July 31]]
-    - [[#trends][Trends]]
-      - [[#all-gis][All GIS]]
-      - [[#by-region][By region]]
+- [[#mass-loss-from-citetmankoff_2021][Mass loss from citet:mankoff_2021]]
+  - [[#baseline-mass-loss][Baseline mass loss]]
+  - [[#2023-mass-loss][2023 mass loss]]
+    - [[#calendar-year-through-next-week][Calendar year (through next week):]]
+    - [[#hydrologic-year-through-next-week][Hydrologic year (through next week)]]
+- [[#discharge][Discharge]]
+  - [[#baseline-discharge-1991-through-2020][Baseline discharge (1991 through 2020)]]
+  - [[#average-since-2013][Average since 2013]]
+  - [[#2023-discharge-through-july-31][2023 discharge through July 31]]
+  - [[#trends][Trends]]
+    - [[#all-gis][All GIS]]
+    - [[#by-region][By region]]
+- [[#bare-ice-area][Bare ice area]]
 
 * Introduction
 :PROPERTIES:
@@ -23,7 +24,7 @@
 
 GISS contributions to the Arctic Report Card
 
-** Mass loss from citet:mankoff_2021
+* Mass loss from citet:mankoff_2021
 
 #+BEGIN_SRC bash :exports both :results verbatim
 # July 23 2023 v 609
@@ -31,7 +32,7 @@ GISS contributions to the Arctic Report Card
 wget https://dataverse.geus.dk/api/access/datafile/49986 -O MB_region.nc
 #+END_SRC
 
-*** Baseline mass loss
+** Baseline mass loss
 
 + ~ 218 Gt yr-1
 
@@ -66,9 +67,9 @@ Data variables: (12/19)
     MB_RACMO     float64 -218.5
 #+end_example
 
-*** 2023 mass loss
+** 2023 mass loss
 
-**** Calendar year (through next week):
+*** Calendar year (through next week):
 
 #+BEGIN_SRC bash :exports both :results verbatim
 echo "day of year: " $(( $(date +%j) + 7 ))
@@ -102,7 +103,7 @@ Data variables: (12/19)
     MB_RACMO     float32 0.0
 #+end_example
 
-**** Hydrologic year (through next week)
+*** Hydrologic year (through next week)
 
 #+BEGIN_SRC jupyter-python :exports both
 print(ds.sum(dim='region').sel({'time':slice('2022-09-01','2023-12-31')}).sum())
@@ -129,11 +130,11 @@ Data variables: (12/19)
 #+end_example
 
 
-** Discharge
+* Discharge
 
 + Using v83 from https://dataverse.geus.dk/dataset.xhtml?persistentId=doi:10.22008/promice/data/ice_discharge/d/v02
 
-*** Baseline discharge (1991 through 2020)
+** Baseline discharge (1991 through 2020)
 
 #+BEGIN_SRC jupyter-python :exports both
 import xarray as xr
@@ -152,7 +153,7 @@ df['1991-01-01':'2020-12-31':].resample('1D').interpolate().mean()
 
 
 
-*** Average since 2013
+** Average since 2013
 
 #+BEGIN_SRC jupyter-python :exports both
 df['2013-01-01':].resample('1D').interpolate().mean()
@@ -163,7 +164,7 @@ df['2013-01-01':].resample('1D').interpolate().mean()
 : err           47.158456
 : dtype: float64
 
-*** 2023 discharge through July 31
+** 2023 discharge through July 31
 
 #+BEGIN_SRC jupyter-python :exports both
 df['2023-01-01':'2023-07-31'].resample('1D').interpolate().mean()
@@ -175,11 +176,11 @@ df['2023-01-01':'2023-07-31'].resample('1D').interpolate().mean()
 : dtype: float64
 
 
-*** Trends
+** Trends
 
 See [[./figs_tmp]] sub-folder for graphics
 
-**** All GIS
+*** All GIS
 
 #+BEGIN_SRC jupyter-python :exports both
 df['discharge'].resample('1D').interpolate().resample('YS').mean().plot(drawstyle='steps-post')
@@ -198,7 +199,7 @@ df['discharge'].resample('1D').interpolate().resample('YS').mean().tail()
 [[file:./figs_tmp/9ccb0fe30c87122c5f37c13618cb8086e8ab1ad9.png]]
 :END:
 
-**** By region
+*** By region
 
 #+BEGIN_SRC jupyter-python :exports both
 dsR = xr.open_dataset("~/data/Mankoff_2020/ice/v83/region.nc")
@@ -210,3 +211,70 @@ _ = dsR.plot.line(x='time', drawstyle='steps-post')
 
 #+RESULTS:
 [[file:./figs_tmp/6742799f03de95bf9f5ff1e2cb55c7c1e55ede79.png]]
+
+* Bare ice area
+
+#+BEGIN_SRC jupyter-python :exports both
+import matplotlib.pyplot as plt
+import numpy as np
+import pandas as pd
+import xarray as xr
+import datetime
+
+from matplotlib import rc
+rc('font', size=11)
+rc('text', usetex=False)
+# matplotlib.pyplot.xkcd()
+
+# plt.close(1)
+fig = plt.figure(1, figsize=(5,4)) # w,h
+fig.clf()
+fig.set_tight_layout(True)
+import matplotlib.gridspec as gridspec
+
+ax = fig.add_subplot(111)
+colors = ['purple','k', 'r', 'darkorange', 'b', 'g','lightgreen']
+
+ds = xr.open_mfdataset('./Adrien/SICE_GrIS_bare_ice_area_*.nc')
+df = ds.to_dataframe()
+
+this_y = datetime.datetime.now().year
+
+for i,y in enumerate(df.index.year.unique()[::-1]):
+    data = df[df.index.year == y]
+    data = data.resample('1D').ffill()
+    data = data[(data.index.dayofyear > 130) & (data.index.dayofyear < 267)]
+    ax.plot(data.index.dayofyear,
+            data['bare_ice_area_km2'],
+            # drawstyle='steps-post',
+            color=colors[i],
+            linewidth = (2 if y == this_y else 1),
+            label=str(y))
+
+ax.legend(fontsize=9, frameon=True, bbox_to_anchor=(0, 0.9), loc='upper left')
+
+from adjust_spines import adjust_spines as adj
+adj(ax, ['left','bottom'])
+
+ax.set_ylabel('Bare ice area [km$^{2}$]')
+import matplotlib.dates as mdates
+
+label = data.index[(data.index.day == 1) | (data.index.day == 15)]
+ax.set_xticks(label.dayofyear)
+ax.set_xticklabels([str(_)[5:10] for _ in label])
+ax.set_xticklabels(['May 15','June 1','June 15','July 1','July 15','Aug 1','Aug 15','Sep 1','Sep 15'])
+plt.xticks(rotation=45)
+
+
+# ax.get_yaxis().set_major_formatter(
+#     mpl.ticker.FuncFormatter(lambda x, p: format(int(x), ',')))
+
+ax.grid(visible=True, which='major', axis='y', alpha=0.33)
+ax.grid(visible=True, which='major', axis='x', alpha=0.33)
+
+plt.savefig('bare_ice.png', transparent=False, bbox_inches='tight', dpi=300)
+plt.savefig('bare_ice.svg', transparent=False, bbox_inches='tight', dpi=300)
+#+END_SRC
+
+#+RESULTS:
+[[file:./figs_tmp/0c19844c042f7ced02d66bad04cfaa05a31bfeac.png]]
