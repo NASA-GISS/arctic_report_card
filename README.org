@@ -16,7 +16,10 @@
     - [[#all-gis][All GIS]]
     - [[#by-region][By region]]
     - [[#publication-graphic][Publication graphic]]
+- [[#greenland-outline][Greenland outline]]
 - [[#bare-ice-area][Bare ice area]]
+- [[#melt][Melt]]
+  - [[#figure][Figure]]
 
 * Introduction
 :PROPERTIES:
@@ -385,6 +388,23 @@ tbl
 : <Figure size 900x700 with 1 Axes>
 :END:
 
+* Greenland outline
+
+#+BEGIN_SRC bash
+grass -c EPSG:3413 G_3413
+
+v.import input=/home/kdm/data.me/GIS/NaturalEarth/ne_10m_admin_0_countries/ne_10m_admin_0_countries.shp output=countries
+v.extract input=countries output=greenland where='name = "Greenland"'
+v.out.ogr input=greenland output=greenland.gpkg
+
+v.import input=/home/kdm/data/Zwally_2012/sectors/sectors.shp output=zwally_2012
+g.region vector=zwally_2012 res=100 -ap
+v.to.rast input=zwally_2012 output=z_rast use=val val=1
+r.to.vect input=z_rast output=ice_edge type=area
+v.out.ogr input=ice_edge output=ice_edge.gpkg
+#+END_SRC
+
+
 * Bare ice area
 
 #+BEGIN_SRC jupyter-python :exports both
@@ -451,3 +471,170 @@ plt.savefig('bare_ice.svg', transparent=False, bbox_inches='tight', dpi=300)
 
 #+RESULTS:
 [[file:./figs_tmp/0c19844c042f7ced02d66bad04cfaa05a31bfeac.png]]
+
+
+
+* Melt
+
+#+BEGIN_SRC bash
+ls TM
+#+END_SRC
+
+#+RESULTS:
+| greenland_climatological_mean_cumulative_melt_colorless_19810401-20100831.tif |
+| greenland-cumulative-melt-climatology.csv                                     |
+| greenland-cumulative-melt.csv                                                 |
+| greenland-daily-melt-climatology.csv                                          |
+| greenland-daily-melt.csv                                                      |
+| greenland-daily-melt.xlsx                                                     |
+| greenland_melt_anomaly_20230401_20230831.eps                                  |
+| greenland_melt_anomaly_20230401_20230831.png                                  |
+| greenland_melt_anomaly_20230401_20230831.svg                                  |
+| greenland_melt_anomaly_20230401_20230831.tif                                  |
+| greenland_melt_anomaly_20230401_20230831_tmb.png                              |
+| greenland_melt_anomaly_colorless_20230401-20230831.tif                        |
+| mote_arctic_report_card_request_20230401-20230831.zip                         |
+
+#+BEGIN_SRC bash
+grass -c ./G_3413/TM
+
+g.region vector=greenland@PERMANENT res=500 -pa
+
+r.import input=TM/greenland_melt_anomaly_colorless_20230401-20230831.tif output=melt extent=input
+
+# d.mon wx0
+# d.rast melt
+
+eval $(g.region -upg raster=melt)
+
+r.mask vector=greenland@PERMANENT
+g.region zoom=MASK
+r.mapcalc "cropped = melt"
+
+g.region raster=cropped
+r.out.gdal input=cropped output=TM/cropped.tif format=GTiff createopt="COMPRESS=DEFLATE"
+#+END_SRC
+
+** Figure
+#+NAME: melt
+#+BEGIN_SRC jupyter-python :exports both
+import numpy as np
+import pandas as pd
+import geopandas as gp
+import rasterio as rio
+import rasterio.mask
+import matplotlib
+import matplotlib.pyplot as plt
+from rasterio.plot import plotting_extent
+import cmocean
+from mpl_toolkits.axes_grid1.inset_locator import inset_axes
+
+from matplotlib import rc
+rc('font', size=12)
+rc('text', usetex=False)
+
+fig = plt.figure(1, figsize=(8,8)) # w,h
+fig.clf()
+
+gs = gridspec.GridSpec(2,2, width_ratios=[1,1], height_ratios=[4,1]) #w,h
+
+ax_melt_map = plt.subplot(gs[0,1])
+ax_melt_plot = plt.subplot(gs[1,1])
+
+C_land = "#EAEAEA"
+C_ocean = "#D0CFD4"
+
+# ax_melt_map.set_facecolor(C_ocean)
+
+if 'r_melt' not in locals():
+    r_melt = rio.open('./TM/cropped.tif')
+    r_melt_extent = plotting_extent(r_melt)
+
+    r_melt = r_melt.read(1)
+    r_melt[r_melt== -999] = np.nan
+
+if 'o' not in locals():
+    o = gp.read_file('greenland.gpkg')
+    
+o.plot(color=C_land, ax=ax_melt_map, facecolor='none', zorder=-1)
+
+cmap = matplotlib.cm.get_cmap(cmocean.cm.balance)
+im_melt = ax_melt_map.imshow(r_melt, extent=r_melt_extent,
+                             cmap=cmap,
+                             vmin=-40, vmax=40)
+
+ax_melt_map.axis('off')
+
+ax_melt_cb = inset_axes(ax_melt_map,
+                        width="5%",  # width = 5% of parent_bbox width
+                        height="25%",  # height : 50%
+                        loc='lower right',
+                        bbox_to_anchor=(-0.25, 0, 1, 1),
+                        bbox_transform=ax_melt_map.transAxes,
+                        borderpad=0)
+
+
+cb_melt = fig.colorbar(im_melt, cax=ax_melt_cb)
+cb_melt.set_label('Melt anomaly\n[days]')
+
+
+df0 = pd.read_csv('TM/greenland-daily-melt.csv', parse_dates=True, index_col=0)
+df1 = pd.read_csv('TM/greenland-daily-melt-climatology.csv')
+df1['date'] = [pd.to_datetime('2023-01-01') + pd.to_timedelta(doy-1, unit='D') for doy in df1['doy']]
+df1 = df1.set_index('date')
+df = df0.merge(df1, left_index=True, right_index=True)
+df[df['qc_flag'] != True] = np.nan
+
+df = df.apply(lambda x: x/df['icesheet_area_km2_x']*100)
+
+ax_melt_plot.plot(df['Median'], color='k', linestyle='--', drawstyle='steps-post', label='Median')
+ax_melt_plot.plot(df['melting_area_km2'],
+         color=np.array(cmap(185, bytes=True)[0:3])/255,
+         drawstyle='steps-post',
+         label='2023',
+         linewidth=1.0)
+
+ax_melt_plot.fill_between(df.index,
+                 df['10'].values.flatten(),
+                 df['90'].values.flatten(),
+                 color='gray',
+                 step='post',
+                 label='Interdecile range',
+                 alpha=0.25)
+
+ax_melt_plot.fill_between(df.index,
+                 df['25'].values.flatten(),
+                 df['75'].values.flatten(),
+                 color='k',
+                 step='post',
+                 label='Interquartile range',
+                 alpha=0.25)
+
+ax_melt_plot.legend(fontsize=9, frameon=False, bbox_to_anchor=(0, 1.25), loc='upper left', ncol=2)
+
+from adjust_spines import adjust_spines as adj
+adj(ax_melt_plot, ['left','bottom'])
+
+ax_melt_plot.set_ylim(0,60)
+ax_melt_plot.set_yticks([0,20,40,60])
+ax_melt_plot.spines['left'].set_bounds(0,60)
+ax_melt_plot.set_ylabel('Melt area\n[%]')
+# ax_melt_plot.xticks(rotation=70)
+# plt.setp(ax_melt_plot.xaxis.get_majorticklabels(), rotation=70)
+import matplotlib.dates as mdates
+
+ax_melt_plot.xaxis.set_major_formatter(mdates.DateFormatter('%b'))
+
+ax_melt_plot.grid(visible=True, which='major', axis='y', alpha=0.33)
+
+plt.savefig('melt.png', transparent=False, bbox_inches='tight', dpi=300)
+# plt.savefig('melt.svg', transparent=False, bbox_inches='tight', dpi=300)
+#+End_src
+
+#+RESULTS: melt
+[[file:./figs_tmp/3c79ef31d75cc83757e23a9aad4c39fba5dd5453.png]]
+
+
+
+
+
