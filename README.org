@@ -20,6 +20,7 @@
 - [[#bare-ice-area][Bare ice area]]
 - [[#melt][Melt]]
   - [[#figure][Figure]]
+- [[#promice-in-situ--point-obs][PROMICE In situ / Point obs]]
 
 * Introduction
 :PROPERTIES:
@@ -636,5 +637,203 @@ plt.savefig('melt.png', transparent=False, bbox_inches='tight', dpi=300)
 
 
 
+
+
+* PROMICE In situ / Point obs
+
+#+BEGIN_SRC jupyter-python :exports both
+import matplotlib.pyplot as plt
+import matplotlib as mpl
+import matplotlib.cm as cm
+import numpy as np
+import pandas as pd
+import geopandas as gp
+import rasterio as rio
+import rasterio.mask
+from rasterio.plot import plotting_extent
+import cmocean
+from mpl_toolkits.axes_grid1.inset_locator import inset_axes
+
+from matplotlib import rc
+rc('font', size=10)
+rc('text', usetex=False)
+
+fig = plt.figure(1, figsize=(8,8)) # w,h
+fig.clf()
+# fig.set_tight_layout(True)
+import matplotlib.gridspec as gridspec
+
+gs = gridspec.GridSpec(2,2, width_ratios=[1,1], height_ratios=[5,1]) #w,h
+
+ax_map = plt.subplot(gs[0,1])
+
+C_land = "#EAEAEA"
+C_ocean = "#D0CFD4"
+sub = ['THU_L','KPC_L','UPE_L','SCO_L','KAN_L','NUK_L','TAS_L','QAS_L']
+
+if 'o' not in locals():
+    o = gp.read_file('greenland.gpkg')
+    
+o.plot(color=C_land, ax=ax_map, facecolor='none', zorder=-1)
+
+ice = gp.read_file('ice_edge.gpkg')
+ice.boundary.plot(color='k', ax=ax_map, facecolor='None', alpha=0.25, linewidth=0.5, zorder=-1)
+
+ax_map.axis('off')
+
+anom = pd.read_csv('./DVA/PROMICE ablation anomalies (%) (1991-2020 ref).csv',
+                  index_col=0, parse_dates=True)
+unc = anom.loc['Uncertainty']
+anom = anom.loc['2023']
+
+abl = pd.read_csv('./promice_ice_ablation_2023.txt',
+                  delim_whitespace=True, index_col=0)
+abl = abl.loc[2023]
+abl = abl[abl.index.str.contains('|'.join(sub))]
+abl.index = [_.split('_')[0] for _ in abl.index]
+
+s = gp.read_file('/home/kdm/data.me/PROMICE/stations.gpkg', index_col=0)\
+    .drop(columns=['description','timestamp','begin','end','altitudeMode',
+                   'tessellate','visibility','drawOrder','icon',
+                   'extrude'])\
+    .to_crs('EPSG:3413')
+
+s = s[s['Name'].str.contains('|'.join(sub))]
+s['Name'] = [_.split('_')[0] for _ in s['Name']]
+
+s['x'] = s['geometry'].x
+s['y'] = s['geometry'].y
+
+s['lon'] = s.to_crs('EPSG:4326')['geometry'].x
+s['lat'] = s.to_crs('EPSG:4326')['geometry'].y
+s.to_csv('stations.csv')
+
+s = s.merge(anom, left_on='Name', right_index=True)\
+     .rename(columns={'2023':'anom'})
+
+s = s.merge(abl, left_on='Name', right_index=True)\
+     .rename(columns={2023:'abl'})
+
+s = s.merge(unc, left_on='Name', right_index=True)\
+     .rename(columns={'Uncertainty':'unc'})
+
+# ax_map.scatter(s['x'], s['y'], c=s['anom'], s=s['abl']*100, cmap=mpl.cm.RdBu_r)
+s['color'] = s['anom'].where(np.abs(s['anom']) > s['unc'])
+sc = s.where(~np.isnan(s['color'])).dropna()
+
+# C = sc['color']; C = (C - C.min()) / (C.max()-C.min()); C=(255*C).astype(int)
+C = sc['color']; C = ((C + 100)/200 * 255).astype(int)
+cmap = mpl.cm.RdBu_r
+C = cmap(C)
+# C = mpl.cm.RdBu_r(sc['color']/np.max(sc['color'])*255)
+
+
+im = ax_map.scatter(sc['x'], sc['y'], facecolor=C, s=sc['abl']*100, edgecolor='k', alpha=1, vmin=-100, vmax=100)
+
+sw = s.where(np.isnan(s['color'])).dropna(subset=['Name'])
+ax_map.scatter(sw['x'], sw['y'], facecolor='w', s=sw['abl']*100, edgecolor='k')
+
+# ax_map.scatter(-38.4576926,72.579521, facecolor='k')
+# summit = gp.GeoDataFrame(geometry=gp.points_from_xy([-38.4576926],[72.579521])).set_crs('EPSG:4326').to_crs('EPSG:3413')
+# ax_map.scatter(summit['geometry'].x,summit['geometry'].y, color='k')
+# ax_map.annotate('Summit',
+#                 xy=(summit['geometry'].x, summit['geometry'].y),
+#                 xycoords='data',
+#                 xytext=(summit['geometry'].x, summit['geometry'].y-75000),
+#                 textcoords='data',
+#                 fontsize=12, color='k',
+#                 # fontweight='bold',
+#                 ha="center", va="center")
+
+def do_text(st, color):
+    xoffset = 0 if st['Name'] != 'THU' else -150000
+    t0 = ax_map.annotate(st['Name'],
+                         xy=(st['x'], st['y']),
+                         xycoords='data',
+                         xytext=(st['x']+xoffset, st['y']),
+                         textcoords='data',
+                         fontsize=6, color=color, fontweight='bold',
+                         ha="center", va="center")
+
+    plussign = '+' if st["anom"] > 0 else ''
+    xoffset = {'KPC':3.0E5,
+              'THU':0, # 3.0E5
+              'UPE':-3.2E5,
+              'SCO':+3.1E5,
+              'KAN':-3.2E5,
+              'TAS':3.2E5,
+              'NUK':-3.2E5,
+              'QAS':-3E5}
+    yoffset = {'KPC':0,
+              'THU':-1.7E5,
+              'UPE':0,
+              'SCO':0,
+              'KAN':0,
+              'TAS':0,
+              'NUK':0,
+              'QAS':0}
+
+    
+    t1 = ax_map.annotate(f'{st["abl"]} m \n {plussign}{np.round(st["anom"]).astype(int)} %',
+                         xy=(st['x']+xoffset[st['Name']], st['y']+yoffset[st['Name']]),
+                         xycoords='data',
+                         xytext=(st['x']+xoffset[st['Name']], st['y']+yoffset[st['Name']]),
+                         textcoords='data',
+                         ha='center', va="center",
+                         bbox=dict(boxstyle="round4,pad=0.2",
+                                   fc="w", ec="k", lw=2, alpha=0.25),
+                         # arrowprops=dict(arrowstyle="->",
+                         #                 connectionstyle="arc3"),
+                         )
+
+
+ # ax.text(s['x'].values, s['y'].values, s['Name'].values)
+# [ax.text(_['x'].values, _['y'].values, _['Name'].values) for _ in s]
+for idx in sc.index:
+    st = sc.loc[idx]
+    do_text(st, 'k')
+
+for idx in sw.index:
+    st = sw.loc[idx]
+    do_text(st, 'k')
+
+
+
+# REGIONS
+region = gp.read_file('/home/kdm/projects/total_mass_balance/tmp/region_interior.gpkg')
+region.plot(ax=ax_map, edgecolor='k', facecolor='None', alpha=1)
+ax_map.text(-1E5, -1.1E6, 'NO')#, transform=ax_map.TransAxes)
+ax_map.text(-2E5, -1.7E6, 'NW')#, transform=ax_map.TransAxes)
+ax_map.text(3E5, -1.5E6, 'NE')#, transform=ax_map.TransAxes)
+ax_map.text(-1E5, -2.1E6, 'CW')#, transform=ax_map.TransAxes)
+ax_map.text(4E5, -2.1E6, 'CE')#, transform=ax_map.TransAxes)
+ax_map.text(-1.6E5, -2.7E6, 'SW')#, transform=ax_map.TransAxes)
+ax_map.text(1.6E5, -2.5E6, 'SE')#, transform=ax_map.TransAxes)
+
+
+
+
+ax_map_cb = inset_axes(ax_map,
+                       width="3%",  # width = 5% of parent_bbox width
+                       height="17%",  # height : 50%
+                       loc='lower right',
+                       bbox_to_anchor=(-0.25, 0.05, 1, 1),
+                       axes_kwargs={'yticks':[-100.,100.]},
+                       bbox_transform=ax_map.transAxes,
+                       borderpad=0)
+cb = fig.colorbar(cm.ScalarMappable(norm=None, cmap=cmap),
+                  cax=ax_map_cb,
+                  label='Ablation Anomaly\n[%]')
+cb.ax.set_yticks([0,0.5,1])
+cb.ax.set_yticklabels([-100,0,100])
+    
+# plt.savefig('ablation.svg', transparent=False, bbox_inches='tight', dpi=300)
+plt.savefig('ablation.png', transparent=False, bbox_inches='tight', dpi=300)
+     
+# [['Name','anom','abl','unc']]
+#+END_SRC
+
+#+RESULTS:
+[[file:./figs_tmp/ad0b31f1f428d8f120bbb83634a5167ea2c65c73.png]]
 
 
