@@ -8,10 +8,11 @@
   - [[#2023-mass-loss][2023 mass loss]]
     - [[#calendar-year-through-next-week][Calendar year (through next week):]]
     - [[#hydrologic-year-through-next-week][Hydrologic year (through next week)]]
+  - [[#smb][SMB]]
 - [[#discharge][Discharge]]
   - [[#baseline-discharge-1991-through-2020][Baseline discharge (1991 through 2020)]]
   - [[#average-since-2013][Average since 2013]]
-  - [[#2023-discharge-through-july-31][2023 discharge through July 31]]
+  - [[#2023-discharge-through-latest-update][2023 discharge through latest update]]
   - [[#trends][Trends]]
     - [[#all-gis][All GIS]]
     - [[#by-region][By region]]
@@ -33,9 +34,11 @@ GISS contributions to the Arctic Report Card
 
 #+BEGIN_SRC bash :exports both :results verbatim
 # July 23 2023 v 609
-# https://dataverse.geus.dk/file.xhtml?persistentId=doi:10.22008/FK2/OHI23Z/CU1ITY&version=609.0
-wget https://dataverse.geus.dk/api/access/datafile/49986 -O MB_region.nc
+# https://dataverse.geus.dk/file.xhtml?persistentId=doi:10.22008/FK2/OHI23Z/CU1ITY&version=655
+wget https://dataverse.geus.dk/api/access/datafile/51358 -O MB_region.nc
 #+END_SRC
+
+#+RESULTS:
 
 ** Baseline mass loss
 
@@ -59,7 +62,7 @@ Dimensions:      ()
 Data variables: (12/19)
     MB           float64 -217.8
     MB_err       float64 91.88
-    MB_ROI       float64 -217.7
+    MB_ROI       float64 -217.8
     MB_ROI_err   float64 157.1
     SMB          float64 291.5
     SMB_err      float64 26.23
@@ -81,7 +84,7 @@ echo "day of year: " $(( $(date +%j) + 7 ))
 #+END_SRC
 
 #+RESULTS:
-: day of year:  211
+: day of year:  258
 
 #+BEGIN_SRC jupyter-python :exports both
 # print(ds.sum(dim='region').sel({'time':slice('2023-01-01','2023-12-31')}).mean()*211) 
@@ -93,57 +96,85 @@ print(ds.sum(dim='region').sel({'time':slice('2023-01-01','2023-12-31')}).sum())
 <xarray.Dataset>
 Dimensions:      ()
 Data variables: (12/19)
-    MB           float32 -183.4
-    MB_err       float32 54.38
-    MB_ROI       float32 -182.1
-    MB_ROI_err   float32 91.18
-    SMB          float32 113.4
-    SMB_err      float32 10.21
+    MB           float32 -283.9
+    MB_err       float32 66.99
+    MB_ROI       float32 -282.7
+    MB_ROI_err   float32 118.3
+    SMB          float32 81.46
+    SMB_err      float32 7.332
     ...           ...
-    BMB_err      float32 3.456
-    BMB_ROI      float32 15.73
-    BMB_ROI_err  float32 3.399
-    MB_HIRHAM    float32 -94.94
-    MB_MAR       float32 -220.8
+    BMB_err      float32 4.355
+    BMB_ROI      float32 20.96
+    BMB_ROI_err  float32 4.266
+    MB_HIRHAM    float32 -223.3
+    MB_MAR       float32 -341.2
     MB_RACMO     float32 0.0
 #+end_example
 
 *** Hydrologic year (through next week)
 
 #+BEGIN_SRC jupyter-python :exports both
-print(ds.sum(dim='region').sel({'time':slice('2022-09-01','2023-12-31')}).sum())
+print(ds.sum(dim='region').sel({'time':slice('2022-09-01','2023-12-31')}).sum()['SMB'])
+#+END_SRC
+
+#+RESULTS:
+: <xarray.DataArray 'SMB' ()>
+: array(350.6542, dtype=float32)
+
+
+** SMB
+
+Hydro year SMB
+
+#+BEGIN_SRC jupyter-python :exports both
+print(ds.sel({'time':slice('2022-09-01','2023-08-31')}))
 #+END_SRC
 
 #+RESULTS:
 #+begin_example
 <xarray.Dataset>
-Dimensions:      ()
+Dimensions:      (time: 13918, region: 7)
+Coordinates:
+  ,* time         (time) datetime64[ns] 1840-01-01 1841-01-01 ... 2023-09-15
+  ,* region       (region) object 'NE' 'CE' 'SE' 'SW' 'CW' 'NW' 'NO'
 Data variables: (12/19)
-    MB           float32 -87.58
-    MB_err       float32 85.75
-    MB_ROI       float32 -86.28
-    MB_ROI_err   float32 145.3
-    SMB          float32 382.6
-    SMB_err      float32 34.43
+    MB           (time) float32 0.2719 0.3049 -0.2794 ... -0.8831 -0.8972 -1.286
+    MB_err       (time) float32 0.3735 0.3577 0.3574 ... 0.1571 0.158 0.1535
+    MB_ROI       (time, region) float32 nan nan nan nan nan ... nan nan nan nan
+    MB_ROI_err   (time, region) float32 nan nan nan nan nan ... nan nan nan nan
+    SMB          (time) float32 1.408 1.438 0.8571 0.8226 ... 0.4518 0.4376 0.0
+    SMB_err      (time) float32 0.3029 0.2842 0.281 ... 0.04067 0.03938 0.0
     ...           ...
-    BMB_err      float32 5.256
-    BMB_ROI      float32 22.77
-    BMB_ROI_err  float32 5.172
-    MB_HIRHAM    float32 19.51
-    MB_MAR       float32 -143.6
-    MB_RACMO     float32 0.0
+    BMB_err      (time) float32 0.03822 0.03736 0.03836 ... 0.01395 0.01394 0.0
+    BMB_ROI      (time, region) float32 0.0 0.0 0.0 0.0 0.0 ... 0.0 0.0 0.0 0.0
+    BMB_ROI_err  (time, region) float32 0.0 0.0 0.0 0.0 0.0 ... 0.0 0.0 0.0 0.0
+    MB_HIRHAM    (time, region) float32 nan nan nan nan nan ... nan nan nan nan
+    MB_MAR       (time, region) float32 nan nan nan nan nan ... nan nan nan nan
+    MB_RACMO     (time, region) float32 nan nan nan nan nan ... nan nan nan nan
+Attributes:
+    featureType:      timeSeries
+    title:            Greenland ice sheet mass balance from 1840 through next...
+    summary:          Greenland ice sheet mass balance from 1840 through next...
+    keywords:         Greenland; Mass; Mass balance
+    source:           git commit: 20af941
+    creator_name:     Ken Mankoff
+    creator_email:    kdm@geus.dk
+    creator_url:      http://kenmankoff.com
+    institution:      GEUS
+    references:       10.22008/promice/mass_balance
+    product_version:  1.0
 #+end_example
 
 
 * Discharge
 
-+ Using v83 from https://dataverse.geus.dk/dataset.xhtml?persistentId=doi:10.22008/promice/data/ice_discharge/d/v02
++ Using v87 from https://dataverse.geus.dk/dataset.xhtml?persistentId=doi:10.22008/promice/data/ice_discharge/d/v02
 
 ** Baseline discharge (1991 through 2020)
 
 #+BEGIN_SRC jupyter-python :exports both
 import xarray as xr
-ds = xr.open_dataset("~/data/Mankoff_2020/ice/v83/region.nc").sum(dim='region')
+ds = xr.open_dataset("~/data/Mankoff_2020/ice/v87/region.nc").sum(dim='region')
 
 df = ds[['discharge','err']].to_dataframe()['1990':]
 df['1991-01-01':'2020-12-31':].mean()
@@ -152,8 +183,8 @@ df['1991-01-01':'2020-12-31':].resample('1D').interpolate().mean()
 #+END_SRC
 
 #+RESULTS:
-: discharge    465.426797
-: err           43.289250
+: discharge    465.427347
+: err           43.289267
 : dtype: float64
 
 
@@ -165,20 +196,24 @@ df['2013-01-01':].resample('1D').interpolate().mean()
 #+END_SRC
 
 #+RESULTS:
-: discharge    497.514989
-: err           47.158456
+: discharge    497.493204
+: err           47.151385
 : dtype: float64
 
-** 2023 discharge through July 31
+** 2023 discharge through latest update
 
 #+BEGIN_SRC jupyter-python :exports both
-df['2023-01-01':'2023-07-31'].resample('1D').interpolate().mean()
+print("Last timestamp: ", df.index[-1])
+df['2023-01-01':'2023-12-31'].resample('1D').interpolate().mean()
 #+END_SRC
 
 #+RESULTS:
-: discharge    487.137623
-: err           45.921724
+:RESULTS:
+: Last timestamp:  2023-08-19 00:00:00
+: discharge    489.208185
+: err           46.120049
 : dtype: float64
+:END:
 
 
 ** Trends
@@ -196,12 +231,12 @@ df['discharge'].resample('1D').interpolate().resample('YS').mean().tail()
 :RESULTS:
 : time
 : 2019-01-01    498.118339
-: 2020-01-01    508.318805
-: 2021-01-01    513.141345
-: 2022-01-01    506.510392
-: 2023-01-01    487.234749
+: 2020-01-01    508.335361
+: 2021-01-01    513.217558
+: 2022-01-01    506.591594
+: 2023-01-01    489.263787
 : Freq: AS-JAN, Name: discharge, dtype: float64
-[[file:./figs_tmp/9ccb0fe30c87122c5f37c13618cb8086e8ab1ad9.png]]
+[[file:./figs_tmp/774af5d75f6bbbcc942618ed999f85a51dc64351.png]]
 :END:
 
 *** By region
@@ -253,9 +288,9 @@ err[THRESH] = np.nan
 coverage[THRESH] = np.nan
 
 def pad_df(df):
-    df = df.append(pd.DataFrame(index=np.array(['1986-01-01']).astype('datetime64[ns]')), sort=True)
+    df = pd.concat([pd.DataFrame(index=np.array(['1986-01-01']).astype('datetime64[ns]')), df] )
     idx = str(df.index.year.max())+'-12-31'
-    df = df.append(pd.DataFrame(index=np.array([idx]).astype('datetime64[ns]')), sort=True)
+    df = pd.concat([df, pd.DataFrame(index=np.array([idx]).astype('datetime64[ns]'))])
     df = df.sort_index()
     return df
 
@@ -316,6 +351,7 @@ for tick in ax_D.xaxis.get_majorticklabels():
     tick.set_horizontalalignment("left")
 
 plt.savefig('./discharge_ts_regions.png', transparent=False, bbox_inches='tight', dpi=300)
+plt.savefig('./discharge_ts_regions.svg', transparent=False, bbox_inches='tight', dpi=300)
 
 Err_pct = (err_day_year.values/D_day_year.values*100).round().astype(int).astype(str)
 Err_pct[Err_pct.astype(float)<0] = 'NaN'
@@ -327,24 +363,10 @@ tbl
 
 #+RESULTS:
 :RESULTS:
-#+begin_example
-/tmp/ipykernel_1267351/1121091204.py:33: FutureWarning: The frame.append method is deprecated and will be removed from pandas in a future version. Use pandas.concat instead.
-  df = df.append(pd.DataFrame(index=np.array(['1986-01-01']).astype('datetime64[ns]')), sort=True)
-/tmp/ipykernel_1267351/1121091204.py:35: FutureWarning: The frame.append method is deprecated and will be removed from pandas in a future version. Use pandas.concat instead.
-  df = df.append(pd.DataFrame(index=np.array([idx]).astype('datetime64[ns]')), sort=True)
-/tmp/ipykernel_1267351/1121091204.py:33: FutureWarning: The frame.append method is deprecated and will be removed from pandas in a future version. Use pandas.concat instead.
-  df = df.append(pd.DataFrame(index=np.array(['1986-01-01']).astype('datetime64[ns]')), sort=True)
-/tmp/ipykernel_1267351/1121091204.py:35: FutureWarning: The frame.append method is deprecated and will be removed from pandas in a future version. Use pandas.concat instead.
-  df = df.append(pd.DataFrame(index=np.array([idx]).astype('datetime64[ns]')), sort=True)
-/tmp/ipykernel_1267351/1121091204.py:33: FutureWarning: The frame.append method is deprecated and will be removed from pandas in a future version. Use pandas.concat instead.
-  df = df.append(pd.DataFrame(index=np.array(['1986-01-01']).astype('datetime64[ns]')), sort=True)
-/tmp/ipykernel_1267351/1121091204.py:35: FutureWarning: The frame.append method is deprecated and will be removed from pandas in a future version. Use pandas.concat instead.
-  df = df.append(pd.DataFrame(index=np.array([idx]).astype('datetime64[ns]')), sort=True)
-/tmp/ipykernel_1267351/1121091204.py:89: UserWarning: FixedFormatter should only be used together with FixedLocator
-  ax_D.set_xticklabels(D.index.year.unique())
-/tmp/ipykernel_1267351/1121091204.py:97: RuntimeWarning: invalid value encountered in cast
-  Err_pct = (err_day_year.values/D_day_year.values*100).round().astype(int).astype(str)
-#+end_example
+: /tmp/ipykernel_1025908/511278796.py:89: UserWarning: FixedFormatter should only be used together with FixedLocator
+:   ax_D.set_xticklabels(D.index.year.unique())
+: /tmp/ipykernel_1025908/511278796.py:98: RuntimeWarning: invalid value encountered in cast
+:   Err_pct = (err_day_year.values/D_day_year.values*100).round().astype(int).astype(str)
 #+begin_example
      CE (Err %) CW (Err %) NE (Err %) NO (Err %) NW (Err %) SE (Err %) SW (Err %)
 1986     70 (9)     74 (8)     23 (8)    0 (NaN)    0 (NaN)    0 (NaN)    0 (NaN)
@@ -404,6 +426,8 @@ v.to.rast input=zwally_2012 output=z_rast use=val val=1
 r.to.vect input=z_rast output=ice_edge type=area
 v.out.ogr input=ice_edge output=ice_edge.gpkg
 #+END_SRC
+
+#+RESULTS:
 
 
 * Bare ice area
@@ -482,6 +506,7 @@ ls TM
 #+END_SRC
 
 #+RESULTS:
+| cropped.tif                                                                   |
 | greenland_climatological_mean_cumulative_melt_colorless_19810401-20100831.tif |
 | greenland-cumulative-melt-climatology.csv                                     |
 | greenland-cumulative-melt.csv                                                 |
@@ -496,7 +521,7 @@ ls TM
 | greenland_melt_anomaly_colorless_20230401-20230831.tif                        |
 | mote_arctic_report_card_request_20230401-20230831.zip                         |
 
-#+BEGIN_SRC bash
+#+BEGIN_SRC bash :eval no
 grass -c ./G_3413/TM
 
 g.region vector=greenland@PERMANENT res=500 -pa
@@ -629,7 +654,7 @@ ax_melt_plot.xaxis.set_major_formatter(mdates.DateFormatter('%b'))
 ax_melt_plot.grid(visible=True, which='major', axis='y', alpha=0.33)
 
 plt.savefig('melt.png', transparent=False, bbox_inches='tight', dpi=300)
-# plt.savefig('melt.svg', transparent=False, bbox_inches='tight', dpi=300)
+plt.savefig('melt.svg', transparent=False, bbox_inches='tight', dpi=300)
 #+End_src
 
 #+RESULTS: melt
@@ -827,7 +852,7 @@ cb = fig.colorbar(cm.ScalarMappable(norm=None, cmap=cmap),
 cb.ax.set_yticks([0,0.5,1])
 cb.ax.set_yticklabels([-100,0,100])
     
-# plt.savefig('ablation.svg', transparent=False, bbox_inches='tight', dpi=300)
+plt.savefig('ablation.svg', transparent=False, bbox_inches='tight', dpi=300)
 plt.savefig('ablation.png', transparent=False, bbox_inches='tight', dpi=300)
      
 # [['Name','anom','abl','unc']]
