@@ -4,10 +4,9 @@
 * Table of contents                               :toc_4:noexport:
 - [[#introduction][Introduction]]
 - [[#mass-loss-from-citetmankoff_2021][Mass loss from citet:mankoff_2021]]
-  - [[#baseline-mass-loss][Baseline mass loss]]
+  - [[#baseline-mass-loss-calendar-years][Baseline mass loss (calendar years)]]
+  - [[#1991----2020-hydro-years][1991 -- 2020 hydro years]]
   - [[#2023-mass-loss][2023 mass loss]]
-    - [[#calendar-year-through-next-week][Calendar year (through next week):]]
-    - [[#hydrologic-year-through-next-week][Hydrologic year (through next week)]]
 - [[#discharge][Discharge]]
   - [[#baseline-discharge-1991-through-2020][Baseline discharge (1991 through 2020)]]
   - [[#average-since-2013][Average since 2013]]
@@ -36,7 +35,7 @@ wget https://dataverse.geus.dk/api/access/datafile/51358 -O MB_region.nc
 
 #+RESULTS:
 
-** Baseline mass loss
+** Baseline mass loss (calendar years)
 
 + ~ 218 Gt yr-1
 
@@ -71,33 +70,28 @@ Data variables: (12/19)
     MB_RACMO     float64 -218.5
 #+end_example
 
-** 2023 mass loss
-
-*** Calendar year (through next week):
+** 1991 -- 2020 hydro years
 
 #+BEGIN_SRC jupyter-python :exports both :display plain
-print("THROUGH: ", ds['time'].values[-1], "\n\n")
-
-ds.sum(dim='region').\
-      sel({'time':slice('2023-01-01','2023-12-31')})\
-      .sum()[['MB','MB_err','SMB','SMB_err']]
+ds.sum(dim='region')\
+  .sel({'time':slice('1990-09-01','2020-08-31')})\
+  .resample({'time':'AS-SEP'})\
+  .sum()\
+  .mean()[['MB','MB_err','SMB','SMB_err','D','D_err']]
 #+END_SRC
 
 #+RESULTS:
-:RESULTS:
-: THROUGH:  2023-09-15T00:00:00.000000000 
-: 
 : <xarray.Dataset>
 : Dimensions:  ()
 : Data variables:
-:     MB       float32 -283.9
-:     MB_err   float32 66.99
-:     SMB      float32 81.46
-:     SMB_err  float32 7.332
-:END:
+:     MB       float32 -162.8
+:     MB_err   float32 88.33
+:     SMB      float32 325.3
+:     SMB_err  float32 29.28
+:     D        float32 465.1
+:     D_err    float32 43.26
 
-
-*** Hydrologic year (through next week)
+** 2023 mass loss
 
 #+BEGIN_SRC jupyter-python :exports both :display plain
 ds.sum(dim='region')\
