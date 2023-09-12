@@ -1,5 +1,5 @@
 
-#+PROPERTY: header-args:jupyter-python+ :session ARC2023
+#+PROPERTY: header-args:jupyter-python+ :session ARC2023 :dir ~/projects/arctic_report_card
 
 * Table of contents                               :toc_4:noexport:
 - [[#introduction][Introduction]]
@@ -8,7 +8,6 @@
   - [[#2023-mass-loss][2023 mass loss]]
     - [[#calendar-year-through-next-week][Calendar year (through next week):]]
     - [[#hydrologic-year-through-next-week][Hydrologic year (through next week)]]
-  - [[#smb][SMB]]
 - [[#discharge][Discharge]]
   - [[#baseline-discharge-1991-through-2020][Baseline discharge (1991 through 2020)]]
   - [[#average-since-2013][Average since 2013]]
@@ -24,9 +23,6 @@
 - [[#promice-in-situ--point-obs][PROMICE In situ / Point obs]]
 
 * Introduction
-:PROPERTIES:
-:header-args: :session ARC :dir .
-:END:
 
 GISS contributions to the Arctic Report Card
 
@@ -79,92 +75,46 @@ Data variables: (12/19)
 
 *** Calendar year (through next week):
 
-#+BEGIN_SRC bash :exports both :results verbatim
-echo "day of year: " $(( $(date +%j) + 7 ))
+#+BEGIN_SRC jupyter-python :exports both :display plain
+print("THROUGH: ", ds['time'].values[-1], "\n\n")
+
+ds.sum(dim='region').\
+      sel({'time':slice('2023-01-01','2023-12-31')})\
+      .sum()[['MB','MB_err','SMB','SMB_err']]
 #+END_SRC
 
 #+RESULTS:
-: day of year:  258
+:RESULTS:
+: THROUGH:  2023-09-15T00:00:00.000000000 
+: 
+: <xarray.Dataset>
+: Dimensions:  ()
+: Data variables:
+:     MB       float32 -283.9
+:     MB_err   float32 66.99
+:     SMB      float32 81.46
+:     SMB_err  float32 7.332
+:END:
 
-#+BEGIN_SRC jupyter-python :exports both
-# print(ds.sum(dim='region').sel({'time':slice('2023-01-01','2023-12-31')}).mean()*211) 
-print(ds.sum(dim='region').sel({'time':slice('2023-01-01','2023-12-31')}).sum())
-#+END_SRC
-
-#+RESULTS:
-#+begin_example
-<xarray.Dataset>
-Dimensions:      ()
-Data variables: (12/19)
-    MB           float32 -283.9
-    MB_err       float32 66.99
-    MB_ROI       float32 -282.7
-    MB_ROI_err   float32 118.3
-    SMB          float32 81.46
-    SMB_err      float32 7.332
-    ...           ...
-    BMB_err      float32 4.355
-    BMB_ROI      float32 20.96
-    BMB_ROI_err  float32 4.266
-    MB_HIRHAM    float32 -223.3
-    MB_MAR       float32 -341.2
-    MB_RACMO     float32 0.0
-#+end_example
 
 *** Hydrologic year (through next week)
 
-#+BEGIN_SRC jupyter-python :exports both
-print(ds.sum(dim='region').sel({'time':slice('2022-09-01','2023-12-31')}).sum()['SMB'])
+#+BEGIN_SRC jupyter-python :exports both :display plain
+ds.sum(dim='region')\
+  .sel({'time':slice('2022-09-01','2023-08-31')})\
+  .sum()[['MB','MB_err','SMB','SMB_err','D','D_err']]
 #+END_SRC
 
 #+RESULTS:
-: <xarray.DataArray 'SMB' ()>
-: array(350.6542, dtype=float32)
-
-
-** SMB
-
-Hydro year SMB
-
-#+BEGIN_SRC jupyter-python :exports both
-print(ds.sel({'time':slice('2022-09-01','2023-08-31')}))
-#+END_SRC
-
-#+RESULTS:
-#+begin_example
-<xarray.Dataset>
-Dimensions:      (time: 13918, region: 7)
-Coordinates:
-  ,* time         (time) datetime64[ns] 1840-01-01 1841-01-01 ... 2023-09-15
-  ,* region       (region) object 'NE' 'CE' 'SE' 'SW' 'CW' 'NW' 'NO'
-Data variables: (12/19)
-    MB           (time) float32 0.2719 0.3049 -0.2794 ... -0.8831 -0.8972 -1.286
-    MB_err       (time) float32 0.3735 0.3577 0.3574 ... 0.1571 0.158 0.1535
-    MB_ROI       (time, region) float32 nan nan nan nan nan ... nan nan nan nan
-    MB_ROI_err   (time, region) float32 nan nan nan nan nan ... nan nan nan nan
-    SMB          (time) float32 1.408 1.438 0.8571 0.8226 ... 0.4518 0.4376 0.0
-    SMB_err      (time) float32 0.3029 0.2842 0.281 ... 0.04067 0.03938 0.0
-    ...           ...
-    BMB_err      (time) float32 0.03822 0.03736 0.03836 ... 0.01395 0.01394 0.0
-    BMB_ROI      (time, region) float32 0.0 0.0 0.0 0.0 0.0 ... 0.0 0.0 0.0 0.0
-    BMB_ROI_err  (time, region) float32 0.0 0.0 0.0 0.0 0.0 ... 0.0 0.0 0.0 0.0
-    MB_HIRHAM    (time, region) float32 nan nan nan nan nan ... nan nan nan nan
-    MB_MAR       (time, region) float32 nan nan nan nan nan ... nan nan nan nan
-    MB_RACMO     (time, region) float32 nan nan nan nan nan ... nan nan nan nan
-Attributes:
-    featureType:      timeSeries
-    title:            Greenland ice sheet mass balance from 1840 through next...
-    summary:          Greenland ice sheet mass balance from 1840 through next...
-    keywords:         Greenland; Mass; Mass balance
-    source:           git commit: 20af941
-    creator_name:     Ken Mankoff
-    creator_email:    kdm@geus.dk
-    creator_url:      http://kenmankoff.com
-    institution:      GEUS
-    references:       10.22008/promice/mass_balance
-    product_version:  1.0
-#+end_example
-
+: <xarray.Dataset>
+: Dimensions:  ()
+: Data variables:
+:     MB       float32 -201.5
+:     MB_err   float32 94.29
+:     SMB      float32 317.1
+:     SMB_err  float32 28.54
+:     D        float32 491.5
+:     D_err    float32 46.41
 
 * Discharge
 
