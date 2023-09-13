@@ -274,7 +274,7 @@ from adjust_spines import adjust_spines as adj
 adj(ax_D, ['left','bottom'])
 
 ROOT="./out/"
-ROOT="/home/kdm/data/Mankoff_2020/ice/v83/"
+ROOT="/home/kdm/data/Mankoff_2020/ice/v87/"
 D = pd.read_csv(ROOT+"region_D.csv", index_col=0, parse_dates=True)
 err = pd.read_csv(ROOT+"region_err.csv", index_col=0, parse_dates=True)
 coverage = pd.read_csv(ROOT+"region_coverage.csv", index_col=0, parse_dates=True)
@@ -283,6 +283,11 @@ THRESH = coverage < 0.5
 D[THRESH] = np.nan
 err[THRESH] = np.nan
 coverage[THRESH] = np.nan
+
+# PROMICE drop in SE. Need 200 m data
+D = D.iloc[:-5]
+err = err.iloc[:-5]
+coverage = coverage.iloc[:-5]
 
 def pad_df(df):
     df = pd.concat([pd.DataFrame(index=np.array(['1986-01-01']).astype('datetime64[ns]')), df] )
@@ -360,9 +365,9 @@ tbl
 
 #+RESULTS:
 :RESULTS:
-: /tmp/ipykernel_1025908/511278796.py:89: UserWarning: FixedFormatter should only be used together with FixedLocator
+: /tmp/ipykernel_125440/2795790439.py:93: UserWarning: FixedFormatter should only be used together with FixedLocator
 :   ax_D.set_xticklabels(D.index.year.unique())
-: /tmp/ipykernel_1025908/511278796.py:98: RuntimeWarning: invalid value encountered in cast
+: /tmp/ipykernel_125440/2795790439.py:102: RuntimeWarning: invalid value encountered in cast
 :   Err_pct = (err_day_year.values/D_day_year.values*100).round().astype(int).astype(str)
 #+begin_example
      CE (Err %) CW (Err %) NE (Err %) NO (Err %) NW (Err %) SE (Err %) SW (Err %)
@@ -403,7 +408,7 @@ tbl
 2020     86 (9)     85 (8)     30 (9)     28 (8)    110 (9)   150 (11)    19 (10)
 2021     83 (9)     90 (8)     31 (9)     27 (8)    113 (9)   149 (11)    19 (10)
 2022     85 (9)     84 (8)     31 (9)     27 (8)    115 (9)   146 (11)    19 (10)
-2023     81 (9)     82 (8)     31 (9)     27 (8)    115 (9)   133 (11)    19 (10)
+2023     82 (9)     81 (8)     31 (9)     27 (8)    115 (9)   135 (11)    19 (10)
 #+end_example
 : <Figure size 900x700 with 1 Axes>
 :END:
