@@ -18,8 +18,11 @@
     - [[#publication-graphic][Publication graphic]]
 - [[#greenland-outline][Greenland outline]]
 - [[#bare-ice-area][Bare ice area]]
-- [[#melt][Melt]]
+- [[#albedo][Albedo]]
+  - [[#crop-to-gl][Crop to GL]]
   - [[#figure][Figure]]
+- [[#melt][Melt]]
+  - [[#figure-1][Figure]]
 - [[#promice-in-situ--point-obs][PROMICE In situ / Point obs]]
 
 * Introduction
@@ -500,6 +503,163 @@ plt.savefig('bare_ice.svg', transparent=False, bbox_inches='tight', dpi=300)
 [[file:./figs_tmp/1bea978be84914ff8759f383cdef4971cc9c45cc.png]]
 
 
+
+* Albedo
+
+** Crop to GL
+  
+#+BEGIN_SRC bash
+grass -c ./G_3413/AW
+
+g.region vector=greenland@PERMANENT res=500 -pa
+
+r.import input=Adrien/SICE_2023_JJA_albedo_anomaly_vs_2017_2022.tif output=anom extent=input
+
+# d.mon wx0
+# d.rast anom
+
+eval $(g.region -upg raster=anom)
+
+r.mask vector=greenland@PERMANENT
+g.region zoom=MASK
+r.mapcalc "cropped = anom"
+
+
+r.mask -r
+g.region raster=cropped -pa # set bounds based on crop
+g.region e=$e w=$w -pa # expand e/w to original to include Canada
+r.mapcalc "cropped_NS = anom"
+
+g.region raster=cropped
+r.out.gdal input=cropped output=Adrien/cropped.tif format=GTiff createopt="COMPRESS=DEFLATE"
+
+g.region raster=cropped_NS
+r.out.gdal input=cropped_NS output=Adrien/cropped_NS.tif format=GTiff createopt="COMPRESS=DEFLATE"
+#+END_SRC
+
+** Figure
+#+BEGIN_SRC jupyter-python
+import matplotlib
+import matplotlib.pyplot as plt
+import datetime
+import numpy as np
+import pandas as pd
+import geopandas as gp
+import rasterio as rio
+import rasterio.mask
+from rasterio.plot import plotting_extent
+import cmocean
+from mpl_toolkits.axes_grid1.inset_locator import inset_axes
+
+from matplotlib import rc
+rc('font', size=11)
+rc('text', usetex=False)
+# matplotlib.pyplot.xkcd()
+
+C_land = "#EAEAEA"
+C_ocean = "#D0CFD4"
+
+# plt.close(1)
+fig = plt.figure(1, figsize=(8,8)) # w,h
+#gcm = get_current_fig_manager()
+#gcm.window.move(-1000,0)
+#gcm.resize(gcm.window.size().height(), gcm.window.size().width())
+# get_current_fig_manager().window.move(0,0)
+fig.clf()
+# fig.set_tight_layout(True)
+import matplotlib.gridspec as gridspec
+
+gs = gridspec.GridSpec(2,2, width_ratios=[1,1], height_ratios=[5,1]) #w,h
+
+
+
+ax_albedo_map = plt.subplot(gs[0,0])
+ax_albedo_plot = plt.subplot(gs[1,0])
+
+if 'o' not in locals():
+    o = gp.read_file('greenland.gpkg')
+    
+o.plot(color=C_land, ax=ax_albedo_map, facecolor='none', zorder=-1)
+# o.plot(facecolor='None', edgecolor='gray', ax=ax_albedo_map, zorder=-1, alpha=1, linewidth=0.5)
+
+
+r_albedo = rio.open('./Adrien/cropped.tif')
+r_albedo_extent = plotting_extent(r_albedo)
+r_albedo = r_albedo.read(1)
+r_albedo[r_albedo== -999] = np.nan
+
+cmapGr = matplotlib.cm.get_cmap(plt.cm.BrBG_r)
+cmapBl = matplotlib.cm.get_cmap(plt.cm.RdBu)
+colors = np.vstack(([cmapGr(i) for i in np.arange(128,257)[::-1]], [cmapBl(i) for i in np.arange(128,257)]))
+import matplotlib.colors as mcolors
+cmap = mcolors.LinearSegmentedColormap.from_list('my_colormap', colors)
+# cmap = matplotlib.cm.get_cmap(cmocean.cm.balance_r)
+
+im_albedo = ax_albedo_map.imshow(r_albedo, extent=r_albedo_extent, cmap=cmap, vmin=-0.1, vmax=0.1)
+
+ax_albedo_map.axis('off')
+
+ax_albedo_cb = inset_axes(ax_albedo_map,
+                          width="5%",  # width = 5% of parent_bbox width
+                          height="25%",  # height : 50%
+                          loc='lower right',
+                          bbox_to_anchor=(-0.25, 0, 1, 1),
+                          bbox_transform=ax_albedo_map.transAxes,
+                          borderpad=0)
+
+# cb_albedo = fig.colorbar(im, cax=ax_albedo_cb)
+cb_albedo = fig.colorbar(im_albedo, cax=ax_albedo_cb)
+cb_albedo.set_label('Albedo anomaly\n[unitless]')
+
+# df = pd.read_csv('JEB/MODIS_S3_JJA.csv',
+#                   parse_dates=True, index_col=1)
+# df.index = [datetime.datetime(int(_),1,1) for _ in df.index]
+# df.loc[df.index[-1] + (df.index[-1]-df.index[-2])] = df.iloc[-1]
+# ax_albedo_plot.plot(df.index,
+#                     # df.sum(axis='columns').values,
+#                     df['JJA_MODIS_S3'].values,
+#                     drawstyle='steps-post', color='k')
+
+
+df = xr.open_dataset('./Adrien/MODIS_GrIS_JJA_mean_albedo.nc').to_dataframe()
+df.index = [datetime.datetime(int(_),1,1) for _ in df.index]
+df.loc[df.index[-1] + (df.index[-1]-df.index[-2])] = df.iloc[-1]
+ax_albedo_plot.plot(df.index,
+                    df['JJA_GrIS_mean_albedo_MODIS'].values,
+                    drawstyle='steps-post', color='k')
+
+# df = xr.open_dataset('./Adrien/SICE_GrIS_JJA_mean_albedo.nc').to_dataframe()
+# df.index = [datetime.datetime(int(_),1,1) for _ in df.index]
+# df.loc[df.index[-1] + (df.index[-1]-df.index[-2])] = df.iloc[-1]
+# ax_albedo_plot.plot(df.index,
+#                     df['JJA_mean_albedo'].values,
+#                     drawstyle='steps-post', color='g')
+
+
+
+adj(ax_albedo_plot, ['left','bottom'])
+
+ax_albedo_plot.set_ylim(0.76,0.81)
+ax_albedo_plot.set_yticks([0.76, 0.77, 0.78, 0.79, 0.80, 0.81])
+# ax_albedo_plot.spines['left'].set_bounds(0.74, 0.82)
+ax_albedo_plot.set_ylabel('Albedo\n[unitless]')
+ax_albedo_plot.set_xticks(ax_albedo_plot.get_xticks()+365*2+1)
+# # ax_albedo_plot.xticks(rotation=70)
+# # plt.setp(ax_albedo_plot.xaxis.get_majorticklabels(), rotation=70)
+import matplotlib.dates as mdates
+ax_albedo_plot.xaxis.set_major_formatter(mdates.DateFormatter('%Y'))
+
+ax_albedo_plot.grid(visible=True, which='major', axis='y', alpha=0.33)
+ax_albedo_plot.plot(df.index[[0,-1]], [df['JJA_GrIS_mean_albedo_MODIS'].mean()]*2, 'k--', alpha=0.5)
+
+plt.savefig('albedo.png', transparent=False, bbox_inches='tight', dpi=300)
+plt.savefig('albedo.svg', transparent=False, bbox_inches='tight', dpi=300)
+#+END_SRC
+
+#+RESULTS:
+[[file:./figs_tmp/3268b4ab5d7d9aab96d1d90328a21084ec036dee.png]]
+
+ 
 
 * Melt
 
