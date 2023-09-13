@@ -492,7 +492,7 @@ plt.savefig('bare_ice.svg', transparent=False, bbox_inches='tight', dpi=300)
 #+END_SRC
 
 #+RESULTS:
-[[file:./figs_tmp/0c19844c042f7ced02d66bad04cfaa05a31bfeac.png]]
+[[file:./figs_tmp/1bea978be84914ff8759f383cdef4971cc9c45cc.png]]
 
 
 
