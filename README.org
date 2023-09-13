@@ -7,6 +7,7 @@
   - [[#baseline-mass-loss-calendar-years][Baseline mass loss (calendar years)]]
   - [[#1991----2020-hydro-years][1991 -- 2020 hydro years]]
   - [[#2023-mass-loss][2023 mass loss]]
+  - [[#match-grace-reporting-period][Match GRACE reporting period]]
 - [[#discharge][Discharge]]
   - [[#baseline-discharge-1991-through-2020][Baseline discharge (1991 through 2020)]]
   - [[#average-since-2013][Average since 2013]]
@@ -41,6 +42,8 @@ wget https://dataverse.geus.dk/api/access/datafile/51358 -O MB_region.nc
 
 #+NAME: baseline_mass_loss
 #+BEGIN_SRC jupyter-python :exports both :results verbatim
+%cd '/home/kdm/projects/arctic_report_card'
+
 import xarray as xr
 ds = xr.open_dataset("MB_region.nc")
 
@@ -52,6 +55,7 @@ print(ds\
 
 #+RESULTS: baseline_mass_loss
 #+begin_example
+/home/kdm/projects/arctic_report_card
 <xarray.Dataset>
 Dimensions:      ()
 Data variables: (12/19)
@@ -102,23 +106,62 @@ Data variables:
 ds.sum(dim='region')\
   .sel({'time':slice('2022-09-01','2023-08-31')})\
   .sum()\
-  [['MB','MB_err','SMB','SMB_err','BMB','BMB_err','D','D_err']]
+  [[_ for _ in ds.data_vars if 'err' not in _]]
 #+END_SRC
 
 #+RESULTS:
 #+begin_example
 <xarray.Dataset>
-Dimensions:  ()
+Dimensions:    ()
 Data variables:
-    MB       float32 -201.5
-    MB_err   float32 94.29
-    SMB      float32 317.1
-    SMB_err  float32 28.54
-    BMB      float32 27.2
-    BMB_err  float32 5.953
-    D        float32 491.5
-    D_err    float32 46.41
+    MB         float32 -201.5
+    MB_ROI     float32 -201.6
+    SMB        float32 317.1
+    SMB_ROI    float32 317.1
+    D          float32 491.5
+    D_ROI      float32 491.6
+    BMB        float32 27.2
+    BMB_ROI    float32 27.2
+    MB_HIRHAM  float32 -124.1
+    MB_MAR     float32 -279.1
+    MB_RACMO   float32 0.0
 #+end_example
+
+** Match GRACE reporting period
+
+#+BEGIN_SRC jupyter-python :exports both :display plain
+ds.sum(dim='region')\
+  .sel({'time':slice('2022-07-01','2023-06-30')})\
+  .sum(dim='time')\
+  [[_ for _ in ds.data_vars if 'err' not in _]]
+#+END_SRC
+
+#+RESULTS:
+#+begin_example
+<xarray.Dataset>
+Dimensions:    ()
+Data variables:
+    MB         float32 -85.12
+    MB_ROI     float32 -85.12
+    SMB        float32 435.3
+    SMB_ROI    float32 435.3
+    D          float32 496.8
+    D_ROI      float32 496.8
+    BMB        float32 23.65
+    BMB_ROI    float32 23.65
+    MB_HIRHAM  float32 -35.77
+    MB_MAR     float32 -134.5
+    MB_RACMO   float32 0.0
+#+end_example
+
+SMB from GRACE
++ [ ] -279 + 496 + 23 = 240 # hydro year, see above.
++ [ ] -134 + 496 + 23 = 385 # GRACE period
++ [ ] -35 + 496 + 23  = 484 # RACMO rather than MAR
+
++ [ ] GRACE MB (from Google Doc) = -90
++ [ ] MB = SMB - D - BMB => SMB = MB + D + BMB => -90*0.84 + 496 + 23 = 443.4
+  + Scale by 0.84 to remove peripheral ice
 
 * Discharge
 
