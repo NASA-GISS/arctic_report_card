@@ -538,7 +538,7 @@ r.out.gdal input=cropped_NS output=Adrien/cropped_NS.tif format=GTiff createopt=
 #+END_SRC
 
 ** Figure
-#+BEGIN_SRC jupyter-python
+#+BEGIN_SRC jupyter-python :exports both
 import matplotlib
 import matplotlib.pyplot as plt
 import datetime
