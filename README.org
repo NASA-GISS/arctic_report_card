@@ -32,9 +32,7 @@ GISS contributions to the Arctic Report Card
 * Mass loss from citet:mankoff_2021
 
 #+BEGIN_SRC bash :exports both :results verbatim
-# July 23 2023 v 609
-# https://dataverse.geus.dk/file.xhtml?persistentId=doi:10.22008/FK2/OHI23Z/CU1ITY&version=655
-wget https://dataverse.geus.dk/api/access/datafile/51358 -O MB_region.nc
+# v708 fetched on [2023-11-03 Fri] https://dataverse.geus.dk/api/access/datafile/:persistentId?persistentId=doi:10.22008/FK2/OHI23Z/4KAVFS -O MB_region.nc
 #+END_SRC
 
 #+RESULTS:
@@ -62,19 +60,19 @@ print(ds\
 <xarray.Dataset>
 Dimensions:      ()
 Data variables: (12/19)
-    MB           float64 -217.8
-    MB_err       float64 91.88
-    MB_ROI       float64 -217.8
-    MB_ROI_err   float64 157.1
+    MB           float64 -218.2
+    MB_err       float64 91.57
+    MB_ROI       float64 -218.2
+    MB_ROI_err   float64 156.8
     SMB          float64 291.5
     SMB_err      float64 26.23
     ...           ...
     BMB_err      float64 5.586
     BMB_ROI      float64 23.95
     BMB_ROI_err  float64 5.497
-    MB_HIRHAM    float64 -221.9
-    MB_MAR       float64 -209.6
-    MB_RACMO     float64 -218.5
+    MB_HIRHAM    float64 -222.3
+    MB_MAR       float64 -210.1
+    MB_RACMO     float64 -218.6
 #+end_example
 
 ** 1991 -- 2020 hydro years
@@ -93,14 +91,14 @@ ds.sum(dim='region')\
 <xarray.Dataset>
 Dimensions:  ()
 Data variables:
-    MB       float32 -162.8
-    MB_err   float32 88.33
+    MB       float32 -162.4
+    MB_err   float32 87.96
     SMB      float32 325.3
     SMB_err  float32 29.28
     BMB      float32 23.06
     BMB_err  float32 5.501
-    D        float32 465.1
-    D_err    float32 43.26
+    D        float32 464.6
+    D_err    float32 42.68
 #+end_example
 
 ** 2023 mass loss
@@ -117,16 +115,16 @@ ds.sum(dim='region')\
 <xarray.Dataset>
 Dimensions:    ()
 Data variables:
-    MB         float32 -201.5
-    MB_ROI     float32 -201.6
+    MB         float32 -214.1
+    MB_ROI     float32 -214.1
     SMB        float32 317.1
     SMB_ROI    float32 317.1
-    D          float32 491.5
-    D_ROI      float32 491.6
+    D          float32 504.1
+    D_ROI      float32 504.1
     BMB        float32 27.2
     BMB_ROI    float32 27.2
-    MB_HIRHAM  float32 -124.1
-    MB_MAR     float32 -279.1
+    MB_HIRHAM  float32 -136.7
+    MB_MAR     float32 -291.6
     MB_RACMO   float32 0.0
 #+end_example
 
@@ -144,37 +142,37 @@ ds.sum(dim='region')\
 <xarray.Dataset>
 Dimensions:    ()
 Data variables:
-    MB         float32 -85.12
-    MB_ROI     float32 -85.12
+    MB         float32 -95.78
+    MB_ROI     float32 -95.78
     SMB        float32 435.3
     SMB_ROI    float32 435.3
-    D          float32 496.8
-    D_ROI      float32 496.8
+    D          float32 507.4
+    D_ROI      float32 507.4
     BMB        float32 23.65
     BMB_ROI    float32 23.65
-    MB_HIRHAM  float32 -35.77
-    MB_MAR     float32 -134.5
+    MB_HIRHAM  float32 -46.43
+    MB_MAR     float32 -145.1
     MB_RACMO   float32 0.0
 #+end_example
 
 SMB from GRACE
-+ [ ] -279 + 496 + 23 = 240 # hydro year, see above.
-+ [ ] -134 + 496 + 23 = 385 # GRACE period
-+ [ ] -35 + 496 + 23  = 484 # RACMO rather than MAR
++ [ ] -291 + 507 + 23 = 239 # hydro year, see above.
++ [ ] -145 + 507 + 23 = 385 # GRACE period using MAR SMB
++ [ ] -47 + 507 + 23 = 483 # HIRHAM rather than MAR
 
 + [ ] GRACE MB (from Google Doc) = -90
-+ [ ] MB = SMB - D - BMB => SMB = MB + D + BMB => -90*0.84 + 496 + 23 = 443.4
++ [ ] MB = SMB - D - BMB => SMB = MB + D + BMB => -90*0.84 + 504 + 23 = 451.4
   + Scale by 0.84 to remove peripheral ice
 
 * Discharge
 
-+ Using v87 from https://dataverse.geus.dk/dataset.xhtml?persistentId=doi:10.22008/promice/data/ice_discharge/d/v02
++ Using v90 from https://doi.org/10.22008/promice/data/ice_discharge/d/v02
 
 ** Baseline discharge (1991 through 2020)
 
 #+BEGIN_SRC jupyter-python :exports both
 import xarray as xr
-ds = xr.open_dataset("~/data/Mankoff_2020/ice/v87/region.nc").sum(dim='region')
+ds = xr.open_dataset("~/data/Mankoff_2020/ice/v90/region.nc").sum(dim='region')
 
 df = ds[['discharge','err']].to_dataframe()['1990':]
 df['1991-01-01':'2020-12-31':].mean()
@@ -183,8 +181,8 @@ df['1991-01-01':'2020-12-31':].resample('1D').interpolate().mean()
 #+END_SRC
 
 #+RESULTS:
-: discharge    465.427347
-: err           43.289267
+: discharge    465.048117
+: err           42.717198
 : dtype: float64
 
 
@@ -196,8 +194,8 @@ df['2013-01-01':].resample('1D').interpolate().mean()
 #+END_SRC
 
 #+RESULTS:
-: discharge    497.493204
-: err           47.151385
+: discharge    500.629915
+: err           46.894040
 : dtype: float64
 
 ** 2023 discharge through latest update
@@ -209,9 +207,9 @@ df['2023-01-01':'2023-12-31'].resample('1D').interpolate().mean()
 
 #+RESULTS:
 :RESULTS:
-: Last timestamp:  2023-08-19 00:00:00
-: discharge    489.208185
-: err           46.120049
+: Last timestamp:  2023-08-10 00:00:00
+: discharge    503.397368
+: err           47.069253
 : dtype: float64
 :END:
 
@@ -230,19 +228,19 @@ df['discharge'].resample('1D').interpolate().resample('YS').mean().tail()
 #+RESULTS:
 :RESULTS:
 : time
-: 2019-01-01    498.118339
-: 2020-01-01    508.335361
-: 2021-01-01    513.217558
-: 2022-01-01    506.591594
-: 2023-01-01    489.263787
+: 2019-01-01    503.009784
+: 2020-01-01    513.816107
+: 2021-01-01    517.558611
+: 2022-01-01    514.149532
+: 2023-01-01    503.431076
 : Freq: AS-JAN, Name: discharge, dtype: float64
-[[file:./figs_tmp/774af5d75f6bbbcc942618ed999f85a51dc64351.png]]
+[[file:./figs_tmp/d23c2eb1c0a50f7354b35e2e50bd87026848105d.png]]
 :END:
 
 *** By region
 
 #+BEGIN_SRC jupyter-python :exports both
-dsR = xr.open_dataset("~/data/Mankoff_2020/ice/v83/region.nc")
+dsR = xr.open_dataset("~/data/Mankoff_2020/ice/v90/region.nc")
 
 # dsR = dsR['discharge'].resample({'time':'1D'}).interpolate().resample({'time':'MS'}).mean()
 dsR = dsR['discharge'].resample({'time':'1D'}).interpolate().resample({'time':'YS'}).mean()
@@ -250,7 +248,7 @@ _ = dsR.plot.line(x='time', drawstyle='steps-post')
 #+END_SRC
 
 #+RESULTS:
-[[file:./figs_tmp/6742799f03de95bf9f5ff1e2cb55c7c1e55ede79.png]]
+[[file:./figs_tmp/325aae350fc0d160178cfe34b3641584a3bb3d8e.png]]
 
 
 *** Publication graphic
@@ -277,7 +275,7 @@ from adjust_spines import adjust_spines as adj
 adj(ax_D, ['left','bottom'])
 
 ROOT="./out/"
-ROOT="/home/kdm/data/Mankoff_2020/ice/v87/"
+ROOT="/home/kdm/data/Mankoff_2020/ice/v90/"
 D = pd.read_csv(ROOT+"region_D.csv", index_col=0, parse_dates=True)
 err = pd.read_csv(ROOT+"region_err.csv", index_col=0, parse_dates=True)
 coverage = pd.read_csv(ROOT+"region_coverage.csv", index_col=0, parse_dates=True)
@@ -368,50 +366,50 @@ tbl
 
 #+RESULTS:
 :RESULTS:
-: /tmp/ipykernel_125440/2795790439.py:93: UserWarning: FixedFormatter should only be used together with FixedLocator
+: /tmp/ipykernel_1384959/1707957611.py:94: UserWarning: FixedFormatter should only be used together with FixedLocator
 :   ax_D.set_xticklabels(D.index.year.unique())
-: /tmp/ipykernel_125440/2795790439.py:102: RuntimeWarning: invalid value encountered in cast
+: /tmp/ipykernel_1384959/1707957611.py:103: RuntimeWarning: invalid value encountered in cast
 :   Err_pct = (err_day_year.values/D_day_year.values*100).round().astype(int).astype(str)
 #+begin_example
      CE (Err %) CW (Err %) NE (Err %) NO (Err %) NW (Err %) SE (Err %) SW (Err %)
 1986     70 (9)     74 (8)     23 (8)    0 (NaN)    0 (NaN)    0 (NaN)    0 (NaN)
-1987     70 (9)     72 (8)     23 (8)     25 (8)     95 (9)    0 (NaN)    0 (NaN)
-1988     70 (9)     70 (8)     22 (8)     24 (8)    0 (NaN)    0 (NaN)    0 (NaN)
-1989     73 (9)     72 (8)     22 (8)     24 (8)    0 (NaN)    0 (NaN)    0 (NaN)
-1990    75 (10)     69 (8)     22 (8)     23 (8)    0 (NaN)    0 (NaN)    0 (NaN)
+1987     70 (9)     71 (8)     23 (8)     24 (7)     95 (9)    0 (NaN)    0 (NaN)
+1988     70 (9)     70 (8)     22 (8)     24 (7)    0 (NaN)    0 (NaN)    0 (NaN)
+1989     73 (9)     71 (8)     22 (8)     24 (7)    0 (NaN)    0 (NaN)    0 (NaN)
+1990    76 (10)     68 (8)     22 (8)     23 (7)    0 (NaN)    0 (NaN)    0 (NaN)
 1991    0 (NaN)    0 (NaN)    0 (NaN)    0 (NaN)    0 (NaN)    0 (NaN)    0 (NaN)
 1992    0 (NaN)    0 (NaN)    0 (NaN)    0 (NaN)    0 (NaN)    0 (NaN)    0 (NaN)
 1993    0 (NaN)    0 (NaN)    0 (NaN)    0 (NaN)    0 (NaN)    0 (NaN)    19 (10)
-1994    71 (10)     69 (8)     24 (9)     25 (8)     96 (9)    0 (NaN)    0 (NaN)
+1994    72 (10)     68 (8)     24 (9)     25 (7)     96 (8)    0 (NaN)    0 (NaN)
 1995    0 (NaN)    0 (NaN)    0 (NaN)    0 (NaN)    0 (NaN)    0 (NaN)    0 (NaN)
 1996    0 (NaN)    0 (NaN)    0 (NaN)    0 (NaN)    0 (NaN)    0 (NaN)    0 (NaN)
 1997    0 (NaN)    0 (NaN)    0 (NaN)    0 (NaN)    0 (NaN)    0 (NaN)    0 (NaN)
-1998     69 (9)     74 (8)     22 (8)     23 (8)     92 (9)   130 (10)    0 (NaN)
-1999     69 (9)    0 (NaN)    0 (NaN)    0 (NaN)    0 (NaN)    0 (NaN)    0 (NaN)
-2000     69 (9)     79 (8)     23 (8)    0 (NaN)     92 (9)   131 (10)    19 (10)
-2001     69 (9)     80 (8)    0 (NaN)    0 (NaN)     90 (9)   126 (10)    19 (10)
-2002     72 (9)     82 (8)    0 (NaN)    0 (NaN)     92 (9)   133 (10)    19 (10)
-2003     75 (9)     83 (8)    0 (NaN)    0 (NaN)     94 (9)   139 (10)    0 (NaN)
-2004     78 (9)     83 (8)    0 (NaN)    0 (NaN)     98 (9)   145 (10)    0 (NaN)
-2005     85 (9)     84 (8)    0 (NaN)    0 (NaN)     99 (9)   147 (10)    20 (10)
-2006     84 (9)     86 (8)     25 (8)    0 (NaN)     97 (9)   139 (11)    20 (10)
-2007     81 (9)     85 (8)    0 (NaN)     26 (8)     96 (9)   136 (11)    19 (10)
-2008     79 (9)     87 (8)    0 (NaN)    0 (NaN)     98 (9)   140 (11)    18 (10)
-2009     78 (9)     89 (8)     25 (8)    0 (NaN)    101 (9)   143 (11)    18 (10)
-2010     77 (9)     89 (8)    0 (NaN)    0 (NaN)    103 (9)   143 (11)    17 (10)
-2011     79 (9)     89 (8)    0 (NaN)    0 (NaN)    106 (9)   142 (11)    19 (10)
-2012     79 (9)     93 (8)     26 (8)     25 (8)    105 (9)   139 (11)    19 (10)
-2013     78 (9)     95 (8)     26 (8)     25 (8)    109 (9)   140 (11)    20 (10)
-2014     76 (9)     94 (8)     28 (8)     26 (8)    111 (9)   138 (11)    19 (10)
-2015     76 (9)     94 (8)     28 (8)     26 (8)    111 (9)   141 (11)    19 (10)
-2016     73 (9)     90 (8)     29 (8)     27 (8)    113 (9)   134 (11)    18 (10)
-2017     78 (9)     82 (8)     29 (8)     28 (8)    115 (9)   144 (11)    19 (10)
-2018     80 (9)     79 (8)     30 (9)     29 (8)    115 (9)   142 (11)    18 (10)
-2019     81 (9)     80 (8)     30 (9)     29 (9)    111 (9)   148 (11)    18 (10)
-2020     86 (9)     85 (8)     30 (9)     28 (8)    110 (9)   150 (11)    19 (10)
-2021     83 (9)     90 (8)     31 (9)     27 (8)    113 (9)   149 (11)    19 (10)
-2022     85 (9)     84 (8)     31 (9)     27 (8)    115 (9)   146 (11)    19 (10)
-2023     82 (9)     81 (8)     31 (9)     27 (8)    115 (9)   135 (11)    19 (10)
+1998     70 (9)     74 (8)     22 (8)     22 (7)     92 (9)   128 (10)    0 (NaN)
+1999     70 (9)    0 (NaN)    0 (NaN)    0 (NaN)    0 (NaN)    0 (NaN)    0 (NaN)
+2000     69 (9)     79 (8)     23 (8)    0 (NaN)     92 (9)   130 (10)    19 (10)
+2001     70 (9)     80 (8)    0 (NaN)    0 (NaN)     91 (8)   125 (10)    19 (10)
+2002     72 (9)     81 (8)    0 (NaN)    0 (NaN)     92 (9)   132 (10)    19 (10)
+2003     75 (9)     83 (8)    0 (NaN)    0 (NaN)     94 (9)   138 (10)    0 (NaN)
+2004     79 (9)     83 (8)    0 (NaN)    0 (NaN)     98 (9)   144 (10)    0 (NaN)
+2005     85 (9)     83 (8)    0 (NaN)    0 (NaN)     99 (9)   145 (10)    20 (10)
+2006     85 (9)     85 (8)     25 (8)    0 (NaN)     97 (9)   138 (10)    20 (10)
+2007     81 (9)     85 (8)    0 (NaN)     26 (7)     97 (9)   135 (10)    19 (10)
+2008     79 (9)     87 (8)    0 (NaN)    0 (NaN)     98 (9)   139 (10)    18 (10)
+2009     78 (9)     89 (8)     24 (8)    0 (NaN)    101 (9)   142 (10)    18 (10)
+2010     77 (9)     89 (8)    0 (NaN)    0 (NaN)    103 (9)   142 (10)    17 (10)
+2011     79 (9)     89 (8)    0 (NaN)    0 (NaN)    106 (9)   142 (10)    19 (10)
+2012     79 (9)     93 (9)     26 (8)     25 (7)    105 (9)   138 (10)    19 (10)
+2013     79 (9)     95 (9)     26 (8)     25 (7)    109 (9)   140 (11)    19 (10)
+2014     76 (9)     94 (9)     28 (8)     26 (7)    111 (9)   138 (11)    19 (10)
+2015     76 (9)     93 (9)     28 (8)     26 (7)    111 (9)   140 (11)    19 (10)
+2016     74 (9)     90 (8)     28 (8)     27 (7)    113 (9)   135 (11)    18 (10)
+2017     79 (9)     82 (8)     29 (8)     27 (7)    116 (9)   144 (11)    19 (10)
+2018     82 (9)     79 (8)     30 (9)     28 (8)    116 (9)   144 (11)    18 (10)
+2019     83 (9)     80 (8)     30 (9)     28 (8)    112 (9)   150 (11)    19 (10)
+2020     88 (9)     85 (8)     30 (9)     27 (8)    111 (9)   152 (11)    19 (10)
+2021     86 (9)     90 (8)     31 (9)     27 (8)    113 (9)   151 (11)    20 (10)
+2022     88 (9)     84 (9)     31 (9)     27 (7)    116 (9)   150 (11)    19 (10)
+2023     86 (9)     81 (9)     31 (9)     26 (7)    116 (9)   143 (11)    19 (10)
 #+end_example
 : <Figure size 900x700 with 1 Axes>
 :END:
