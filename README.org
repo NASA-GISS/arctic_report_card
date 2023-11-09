@@ -7,7 +7,6 @@
   - [[#baseline-mass-loss-calendar-years][Baseline mass loss (calendar years)]]
   - [[#1991----2020-hydro-years][1991 -- 2020 hydro years]]
   - [[#2023-mass-loss][2023 mass loss]]
-  - [[#match-grace-reporting-period][Match GRACE reporting period]]
 - [[#discharge][Discharge]]
   - [[#baseline-discharge-1991-through-2020][Baseline discharge (1991 through 2020)]]
   - [[#average-since-2013][Average since 2013]]
@@ -128,41 +127,13 @@ Data variables:
     MB_RACMO   float32 0.0
 #+end_example
 
-** Match GRACE reporting period
+As per ARC 2023 GRACE for 2023 hydro year [2022-09-01 Thu] - [2023-08-31 Thu] is -156 +- 22 Gt.
 
-#+BEGIN_SRC jupyter-python :exports both :display plain
-ds.sum(dim='region')\
-  .sel({'time':slice('2022-07-01','2023-06-30')})\
-  .sum(dim='time')\
-  [[_ for _ in ds.data_vars if 'err' not in _]]
-#+END_SRC
-
-#+RESULTS:
-#+begin_example
-<xarray.Dataset>
-Dimensions:    ()
-Data variables:
-    MB         float32 -95.78
-    MB_ROI     float32 -95.78
-    SMB        float32 435.3
-    SMB_ROI    float32 435.3
-    D          float32 507.4
-    D_ROI      float32 507.4
-    BMB        float32 23.65
-    BMB_ROI    float32 23.65
-    MB_HIRHAM  float32 -46.43
-    MB_MAR     float32 -145.1
-    MB_RACMO   float32 0.0
-#+end_example
-
-SMB from GRACE
-+ [ ] -291 + 507 + 23 = 239 # hydro year, see above.
-+ [ ] -145 + 507 + 23 = 385 # GRACE period using MAR SMB
-+ [ ] -47 + 507 + 23 = 483 # HIRHAM rather than MAR
-
-+ [ ] GRACE MB (from Google Doc) = -90
-+ [ ] MB = SMB - D - BMB => SMB = MB + D + BMB => -90*0.84 + 504 + 23 = 451.4
-  + Scale by 0.84 to remove peripheral ice
+hydro year SMB from 'observations'
++ [ ] -156*0.84 + 504 + 27 = 399.96 # Scaling GRACE by 0.84 to remove peripheral ice
++ [ ] -156 + 504 + 27 = 375 # Do not scale GRACE to main ice (but D and BMB are main ice)
++ [ ] -291 + 504 + 27 = 240 # MAR SMB  = MB_MAR + D + BMB
++ [ ] -136 + 504 + 27 = 395 # HIRHAM SMB = MB_HIRHAM + D + BMB
 
 * Discharge
 
