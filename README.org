@@ -128,10 +128,10 @@ Data variables:
 #+end_example
 
 As per ARC 2023 GRACE for 2023 hydro year [2022-09-01 Thu] - [2023-08-31 Thu] is -156 +- 22 Gt.
++ NOTE: This number is already scaled by 0.84 so it represents only main ice sheet.
 
 hydro year SMB from 'observations'
-+ [ ] -156*0.84 + 504 + 27 = 399.96 # Scaling GRACE by 0.84 to remove peripheral ice
-+ [ ] -156 + 504 + 27 = 375 # Do not scale GRACE to main ice (but D and BMB are main ice)
++ [ ] -156 + 504 + 27 = 375
 + [ ] -291 + 504 + 27 = 240 # MAR SMB  = MB_MAR + D + BMB
 + [ ] -136 + 504 + 27 = 395 # HIRHAM SMB = MB_HIRHAM + D + BMB
 
